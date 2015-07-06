@@ -9,12 +9,12 @@ public class Particle {
 	 * Mass in Kg
 	 */
 	public double mass;
-	
+
 	/**
 	 * Accelerations in m/s x,y,z
 	 */
 	public double[] accel;
-	
+
 	/**
 	 * Velocities in m/s x,y,z
 	 */
@@ -23,15 +23,15 @@ public class Particle {
 	 * Coordinates in m x,y,z
 	 */
 	public double[] coordinates;
-	
+
 	public String name;
-	
+
 	public Particle(String line) {
-		String [] data = line.split(" ");
+		String[] data = line.split(" ");
 		this.accel = new double[3];
 		this.velocity = new double[3];
 		this.coordinates = new double[3];
-		
+
 		if (data.length == 8) {
 			this.name = data[0];
 			this.mass = Double.parseDouble(data[1]);
@@ -43,19 +43,21 @@ public class Particle {
 			this.velocity[2] = Double.parseDouble(data[7]);
 		}
 	}
-	
+
 	public void resetAccel() {
 		this.accel[0] = 0;
 		this.accel[1] = 0;
 		this.accel[2] = 0;
 	}
-	
+
 	public void updateSpeed() {
-		
 	}
-	
+
 	public void updateCoordinates() {
-		
+		this.coordinates[0] += 0.5 * this.accel[0] * Main.resPow + velocity[0] * Main.resolution;
+		this.coordinates[1] += 0.5 * this.accel[1] * Main.resPow + velocity[1] * Main.resolution;
+		this.coordinates[2] += 0.5 * this.accel[2] * Main.resPow + velocity[2] * Main.resolution;
+
 	}
 
 	public double distance(Particle other) {
