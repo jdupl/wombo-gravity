@@ -5,32 +5,55 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 public class Main {
 
-	public final static long resolution = 1;
-
-	public final static long resPow = resolution * resolution;
-
 	public static final double G = (-6.6738480 * Math.pow(10, -11));
 
-	public static void main(String[] args) {
-		ArrayList<Particle> particles = getParticles("data.txt");
-		int maxIt = 100;
+	public final static long computeResSec = 1;
+	public final static long resPow = computeResSec * computeResSec;
 
+	public final static long frameResSec = 24 * 60 * 60;
+
+	public static void main(String[] args) {
+		long maxFrames = 365;
+
+		ArrayList<Particle> particles = getParticles("data/data.txt");
+		System.out.println("Loaded " + particles.size() + " particles");
+
+		long ms = System.currentTimeMillis();
+		crunch(maxFrames, particles);
+		System.out.println("Simulation took " + (System.currentTimeMillis() - ms) + " ms");
 	}
 
-	public void crunch(int maxIt, ArrayList<Particle> particles) {
-		long currentTime = 0;
-		while (currentTime / resolution < maxIt) {
+	public static void crunch(long maxFrames, ArrayList<Particle> particles) {
+		long frameCount = 0;
 
+		while (frameCount++ < maxFrames) {
+			long ms = System.currentTimeMillis();
+			computeFrame(particles);
+			System.out.println("Frame took " + (System.currentTimeMillis() - ms) + " ms");
+			System.out.println(particles.get(3));
+		}
+	}
+
+	public static void computeFrame(ArrayList<Particle> particles) {
+		long currentFrameIt = 0;
+
+		while (currentFrameIt++ < frameResSec) {
 			for (Particle particle : particles) {
 				particle.resetAccel();
 
 				for (Particle otherParticle : particles) {
-					if (particle != otherParticle) {
-						// calculer accel
+					if (particle != otherParticle) { // compare by address in memory
+						// compute accel
+						double distance = particle.distance(otherParticle);
+						distance = distance * distance * distance;
+						double massDist = particle.mass / distance;
+
+						particle.accel[0] += (massDist) * (particle.coordinates[0] - otherParticle.coordinates[0]);
+						particle.accel[1] += (massDist) * (particle.coordinates[1] - otherParticle.coordinates[1]);
+						particle.accel[2] += (massDist) * (particle.coordinates[2] - otherParticle.coordinates[2]);
 					}
 				}
 				particle.accel[0] *= G;
