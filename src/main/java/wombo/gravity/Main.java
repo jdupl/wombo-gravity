@@ -47,13 +47,18 @@ public class Main {
 				for (Particle otherParticle : particles) {
 					if (particle != otherParticle) { // compare by address in memory
 						// compute accel
-						double distance = particle.distance(otherParticle);
-						distance = distance * distance * distance;
-						double massDist = particle.mass / distance;
+						double distx = particle.coordinates[0] - otherParticle.coordinates[0];
+						double disty = particle.coordinates[1] - otherParticle.coordinates[1];
+						double distz = particle.coordinates[2] - otherParticle.coordinates[2];
 
-						particle.accel[0] += (massDist) * (particle.coordinates[0] - otherParticle.coordinates[0]);
-						particle.accel[1] += (massDist) * (particle.coordinates[1] - otherParticle.coordinates[1]);
-						particle.accel[2] += (massDist) * (particle.coordinates[2] - otherParticle.coordinates[2]);
+						double squares = distx * distx + disty * disty + distz * distz;
+
+						// using Math.pow makes this 10 times slower (WHY?)
+						double norm = otherParticle.mass / Math.pow(squares, 1.5);
+
+						particle.accel[0] += norm * distx;
+						particle.accel[1] += norm * disty;
+						particle.accel[2] += norm * distz;
 					}
 				}
 				particle.accel[0] *= G;

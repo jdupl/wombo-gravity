@@ -45,9 +45,9 @@ public class Particle {
 	}
 
 	public void resetAccel() {
-		this.accel[0] = 0;
-		this.accel[1] = 0;
-		this.accel[2] = 0;
+		accel[0] = 0;
+		accel[1] = 0;
+		accel[2] = 0;
 	}
 
 	public void updateSpeed() {
@@ -57,9 +57,9 @@ public class Particle {
 	}
 
 	public void updateCoordinates() {
-		this.coordinates[0] += 0.5 * this.accel[0] * Main.resPow + velocity[0] * Main.computeResSec;
-		this.coordinates[1] += 0.5 * this.accel[1] * Main.resPow + velocity[1] * Main.computeResSec;
-		this.coordinates[2] += 0.5 * this.accel[2] * Main.resPow + velocity[2] * Main.computeResSec;
+		coordinates[0] += 0.5 * accel[0] * Main.resPow + velocity[0] * Main.computeResSec;
+		coordinates[1] += 0.5 * accel[1] * Main.resPow + velocity[1] * Main.computeResSec;
+		coordinates[2] += 0.5 * accel[2] * Main.resPow + velocity[2] * Main.computeResSec;
 
 	}
 
