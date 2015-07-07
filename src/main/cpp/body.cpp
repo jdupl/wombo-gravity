@@ -1,6 +1,5 @@
 #include "body.hpp"
 
-/**/
 #include <stdio.h>
 #include <cstdio>
 #include <iostream>
@@ -8,11 +7,8 @@
 #include <string>
 #include <iomanip>
 #include <vector>
-/**/
+#include <string>
 
-// << et >> sont definis dans fonctions
-
-/*-----------------------------------<vect>-----------------------------------*/
 vect& vect::operator =	(const vect& w){
     this->x = w.x;
     this->y = w.y;
@@ -21,71 +17,34 @@ vect& vect::operator =	(const vect& w){
     return (*this);
 }
 
-istream& operator >> (istream& flux, vect& v){
-
-    flux >> v.x >> v.y >> v.z;
-
-    return (flux);
+vect::~vect() {
 }
 
-ostream& operator << (ostream& flux, const vect& v){
-
-    cout.setf(ios::fixed);
-    cout.setf(ios::showpoint);
-
-    flux
-        << setw(DPS) << v.x
-        << "," << setw(DPS) << v.y
-        << "," << setw(DPS) << v.z;
-
-    return (flux);
-}
-
-vect::vect(double xi, double yi, double zi){
+vect::vect(double xi, double yi, double zi) {
     x = xi;
     y = yi;
     z = zi;
 }
 
-vect::~vect(){
-}
-
-vect::vect(const vect& v){
+vect::vect(const vect& v) {
     x = v.x;
     y = v.y;
     z = v.z;
 }
 
-void vect::reset(){
+void vect::reset() {
     x = 0;
     y = 0;
     z = 0;
 }
 
-void vect::mult(double d){
+void vect::mult(double d) {
     x *= d;
     y *= d;
     z *= d;
 }
 
-/*-----------------------------------<body>-----------------------------------*/
-
-istream& operator >> (istream& flux, body& b){
-
-    flux >> b.nom >> b.m >> b.r >> b.v;
-
-    return (flux);
-}
-
-ostream& operator << (ostream& flux, const body& b){
-
-    cout.setf(ios::fixed);
-    cout.setf(ios::showpoint);
-
-    flux << setw(10) << b.nom << "," << setw(15) << b.m
-    << "," << b.r << "," << b.v << endl;
-
-    return (flux);
+body::~body() {
 }
 
 body::body(string str, double masse, vect position, vect vitesse, vect acc) {
@@ -97,10 +56,10 @@ body::body(string str, double masse, vect position, vect vitesse, vect acc) {
 }
 
 body::body(std::vector<string> csv) {
+    std::string::size_type sz;
     this->nom = csv[0];
-}
-
-body::~body() {
+    this->m = std::stod(csv[1]);
+    this->r = vect(std::stod(csv[2]), std::stod(csv[3]), std::stod(csv[4]));
 }
 
 body::body(const body& b) {
@@ -109,7 +68,6 @@ body::body(const body& b) {
     this-> v	= b.v;		//vitesse
     this-> a	= b.a;	//acceleration
     this->nom	= b.nom;	//nom
-
 }
 
 void body::actualise() {

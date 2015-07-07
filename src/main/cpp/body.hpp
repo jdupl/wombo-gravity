@@ -1,4 +1,3 @@
-/**/
 #include <stdio.h>
 #include <cstdio>
 #include <iostream>
@@ -6,44 +5,37 @@
 #include <iomanip>
 #include <fstream>
 #include <vector>
-/**/
 
 #ifndef _BODY_AND_VECT_
 #define _BODY_AND_VECT_
 
-/**/
 #define G (-6.6738480 * pow(10, -11))
 #define interval (1)
 #define interval_p2 (interval*interval)
 #define JOURNEE (3600 * 24)
 #define ANNEE (3600 * 24 * 365.242190517)
 #define SAVE_RES (JOURNEE * 1)
-#define MAX_BODIES 20
-#define DPS 15 //double print size
-/**/
 
 using namespace std;
 
-class vect{
-
-    friend istream& operator >> (istream&, const vect&);
-    friend ostream& operator << (ostream&, const vect&);
+class vect {
 
     public:
         double x;
         double y;
         double z;
 
-        vect& 	operator =	(const vect&);
+        vect& operator = (const vect&);
 
-        vect(double xi=0, double yi=0, double zi=0);
         ~vect();
+        vect(double xi=0, double yi=0, double zi=0);
         vect(const vect&);
+
         void reset();
         void mult(double);
 };
 
-class body{
+class body {
     friend istream& operator >> (istream&, const body&);
     friend ostream& operator << (ostream&, const body&);
 
@@ -54,8 +46,8 @@ class body{
         vect a;		//acceleration
         string nom; //nom
 
-        body(string str="-", double masse=0, vect position=0, vect vitesse=0, vect acc=0);
         ~body();
+        body(string str="-", double masse=0, vect position=0, vect vitesse=0, vect acc=0);
         body(std::vector<string> csv);
         body(const body&);
 
