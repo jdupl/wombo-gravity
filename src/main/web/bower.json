@@ -1,0 +1,22 @@
+{
+  "name": "wombo-gravity-viewer",
+  "version": "0.0.0",
+  "homepage": "https://github.com/jdupl/wombo-gravity",
+  "authors": [
+    "Justin Duplessis <drfoliberg@gmail.com>"
+  ],
+  "description": "Webui to view particle systems",
+  "main": "index.html",
+  "license": "GPLv3",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "threejs": "*",
+    "stats.js": "*"
+  }
+}
