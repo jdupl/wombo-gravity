@@ -40,18 +40,15 @@ vector<body> getBodies() {
 }
 
 void accel(body& b1, body& b2) {
-
     double tempx, tempy, tempz, tempo;
 
     tempx = b1.r.x - b2.r.x;
     tempy = b1.r.y - b2.r.y;
     tempz = b1.r.z - b2.r.z;
 
-    tempo = (b2.m)/(pow(
-                        pow((tempx), 2) +
-                        pow((tempy), 2) +
-                        pow((tempz), 2),
-                    1.50));
+    double tmp = pow(tempx, 2) + pow(tempy, 2) + pow(tempz, 2);
+
+    tempo = (b2.m) / (tmp * sqrt(tmp));
 
     b1.a.x += (tempo) * (tempx);
     b1.a.y += (tempo) * (tempy);
