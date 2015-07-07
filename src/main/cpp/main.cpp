@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <sstream>
 #include <vector>
+#include <ctime>
 
 #include "body.hpp"
 
@@ -57,27 +58,50 @@ void accel(body& b1, body& b2) {
     b1.a.z += (tempo) * (tempz);
 }
 
-
-int main(int argc, char** argv) {
-    vector <body> bodies = getBodies();
-
-    for (int i =0;i < int(bodies.size()); i++) {
-        cout << bodies[i].nom << " " << bodies[i].m << "\n";
-    }
-    /*
-    for (int i = 0; i < nbbodies; i++){ // pour chaque astre
+void computeInterval(vector<body>& bodies) {
+    int bodyCount = (int) bodies.size();
+    for (int i = 0; i < bodyCount; i++){ // pour chaque astre
         // Calcul de l'acceleration
         bodies[i].a.reset();
 
-        for (int j = 0; j < nbbodies; j++) { // Pour l'interaction avec chaque autre astre
+        for (int j = 0; j < bodyCount; j++) { // Pour l'interaction avec chaque autre astre
             if (i != j) accel(bodies[i], bodies[j]);
         }
 
         bodies[i].a.mult(G);
     }
-    for (int i = 0; i < nbbodies; i++) { // pour chaque astre
+    for (int i = 0; i < bodyCount; i++) { // pour chaque astre
         bodies[i].actualise();
     }
-    */
+}
 
+void computeFrame(vector<body>& bodies, int intervalCount) {
+    clock_t begin = clock();
+
+    int currentIteration = 0;
+    while (currentIteration++ < intervalCount) {
+        computeInterval(bodies);
+    }
+    clock_t end = clock();
+
+    cout << "frame took " << double(end - begin) / 1000 << " ms\n";
+}
+
+void printSystem(vector<body>& bodies) {
+    for (int i =0; i < int(bodies.size()); i++) {
+        cout << bodies[i].nom << " x:" << bodies[i].r.x << " y:" << bodies[i].r.y << " z:" << bodies[i].r.z<< "\n";
+    }
+}
+
+int main(int argc, char** argv) {
+    vector <body> bodies = getBodies();
+    int maxFrames = 365;
+    int currentFrame = 0;
+
+    printSystem(bodies);
+
+    while (currentFrame++ < maxFrames) {
+        computeFrame(bodies, 60 * 60 * 24);
+    }
+    printSystem(bodies);
 }
