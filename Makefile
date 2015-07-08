@@ -24,6 +24,3 @@ obj/%.o: $(SOURCE)/%.cpp lib/json/jsoncpp.cpp
 
 clean:
 	rm $(EXEC) $(OBJECTS)
-
-mrproper: clean
-	rm $(EXEC) $(OBJECTS)
