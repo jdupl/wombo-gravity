@@ -1,0 +1,29 @@
+CC=g++
+SOURCE=src/main/cpp
+CPP_FILES=$(wildcard $(SOURCE)/*.cpp)
+OBJECTS=$(addprefix obj/,$(notdir $(CPP_FILES:.cpp=.o)))
+
+CFLAGS=-W -Wall -O3 -std=c++11 -fexceptions
+LD_FLAGS=
+
+EXEC=build/wombo
+DIRS=build obj
+
+all: directories $(EXEC)
+
+directories: ${DIRS}
+
+${DIRS}:
+	mkdir ${DIRS}
+
+build/wombo: $(OBJECTS)
+	$(CC) $(LD_FLAGS) -o $@ $^
+
+obj/%.o: $(SOURCE)/%.cpp
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+clean:
+	rm $(EXEC) $(OBJECTS)
+
+mrproper: clean
+	rm $(EXEC) $(OBJECTS)

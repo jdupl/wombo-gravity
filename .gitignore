@@ -27,7 +27,7 @@
 *.out
 *.app
 
-bin/
+lib/
+build/
 obj/
-cpp-wombo/
 src/main/web/bower_components
