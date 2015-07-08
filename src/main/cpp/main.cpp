@@ -16,23 +16,25 @@ using namespace std;
 vector<body> getBodies();
 void accel(body&, body&);
 void computeInterval(vector<body>&);
-void computeFrame(vector<body>& , int);
+void computeFrame(vector<body>&, int&);
 void printSystem(vector<body>&);
 void printSimulationLog();
 
 int main(int argc, char** argv) {
-    vector <body> bodies = getBodies();
-    unsigned int nbBodies = bodies.size();
     int maxFrames = 365;
-    int currentFrame = 0;
-    
+    int frameResolution = 60 * 60 * 24;
+
+    vector <body> bodies = getBodies();
+
     printSimulationLog();
-    printSystem(nbBodies, bodies);
+    printSystem(bodies);
+
+    int currentFrame = 0;
 
     while (currentFrame++ < maxFrames) {
-        computeFrame(nbBodies, bodies, 60 * 60 * 24);
+        computeFrame(bodies, frameResolution);
     }
-    printSystem(nbBodies, bodies);
+    printSystem(bodies);
 }
 
 vector<body> getBodies() {
@@ -75,42 +77,45 @@ void accel(body& b1, body& b2) {
     b1.a.z += (tempo) * (tempz);
 }
 
-void computeInterval(unsigned int& sz, vector<body>& bodies) {
-    for (int i = 0; i < sz; i++){ // pour chaque astre
+void computeInterval(vector<body>& bodies) {
+    int count = int(bodies.size());
+
+    for (int i = 0; i < count; i++) { // pour chaque astre
         // Calcul de l'acceleration
         bodies[i].a.reset();
 
-        for (int j = 0; j < sz; j++) { // Pour l'interaction avec chaque autre astre
+        for (int j = 0; j < count; j++) { // Pour l'interaction avec chaque autre astre
             if (i != j) accel(bodies[i], bodies[j]);
         }
 
         bodies[i].a.mult(G);
     }
-    for (int i = 0; i < sz; i++) { // pour chaque astre
+
+    for (int i = 0; i < count; i++) { // pour chaque astre
         bodies[i].actualise();
     }
 }
 
-void computeFrame(unsigned int& sz, vector<body>& bodies, int intervalCount) {
+void computeFrame(vector<body>& bodies, int& intervalCount) {
     clock_t begin = clock();
-
     int currentIteration = 0;
+
     while (currentIteration++ < intervalCount) {
-        computeInterval(sz, bodies);
+        computeInterval(bodies);
     }
     clock_t end = clock();
 
     cout << "frame took " << double(end - begin) / 1000 << " ms\n";
 }
 
-void printSystem(unsigned int& sz, vector<body>& bodies) {
-    for (int i =0; i < sz; i++) {
+void printSystem(vector<body>& bodies) {
+    for (int i =0; i < int(bodies.size()); i++) {
         cout << bodies[i].nom << " x:" << bodies[i].r.x << " y:" << bodies[i].r.y << " z:" << bodies[i].r.z<< "\n";
     }
 }
 
 void printSimulationLog() {
-	cout 
+	cout
 	<< "  .                   .     .     .   .     . . .       . . .   .   . .         .   .   .       .   \n"
 	<< "   . . . .   .   . .         . . .     .     .r. . .   :i:   .   .   .   .               .   . .    \n"
 	<< ". . . .   . .           .     .     .  Z@@@B@W@W  .   .M@M@B@M2   . .   .   .           .     . . . \n"
@@ -177,5 +182,5 @@ void printSimulationLog() {
 	<< "       . .             .     . XZ:   MM@r. iM@@i .M@8.  .@M@   .           .     .         . . .    \n"
 	<< "  .       .   . .       .           . 0M@B@Z@8.    M@@@W@MZ .       .           .           .   .   \n"
 	<< "                       . .         .   . .:. . .     :i2   .           .   . . .                    \n"
-	<< endl;    
+	<< endl;
 }
