@@ -9,6 +9,8 @@
 #include <vector>
 #include <string>
 
+using namespace std;
+
 vect& vect::operator =	(const vect& w){
     this->x = w.x;
     this->y = w.y;
@@ -55,12 +57,12 @@ body::body(string str, double masse, vect position, vect vitesse, vect acc) {
     a = acc;
 }
 
-body::body(std::vector<string> csv) {
-    std::string::size_type sz;
+body::body(vector<string> csv) {
+    string::size_type sz;
     this->nom = csv[0];
-    this->m = std::stod(csv[1]);
-    this->r = vect(std::stod(csv[2]), std::stod(csv[3]), std::stod(csv[4]));
-    this->v = vect(std::stod(csv[5]), std::stod(csv[6]), std::stod(csv[7]));
+    this->m = stod(csv[1]);
+    this->r = vect(stod(csv[2]), stod(csv[3]), stod(csv[4]));
+    this->v = vect(stod(csv[5]), stod(csv[6]), stod(csv[7]));
 }
 
 body::body(const body& b) {
