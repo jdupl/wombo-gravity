@@ -16,10 +16,10 @@ directories: ${DIRS}
 ${DIRS}:
 	mkdir ${DIRS}
 
-build/wombo: $(OBJECTS)
+build/wombo: $(OBJECTS) lib/json/jsoncpp.o
 	$(CC) $(LD_FLAGS) -o $@ $^
 
-obj/%.o: $(SOURCE)/%.cpp
+obj/%.o: $(SOURCE)/%.cpp lib/json/jsoncpp.cpp
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
