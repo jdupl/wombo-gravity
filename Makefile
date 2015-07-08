@@ -16,6 +16,8 @@ directories: ${DIRS}
 ${DIRS}:
 	mkdir ${DIRS}
 
+.PHONY: all directories clean
+
 build/wombo: $(OBJECTS) lib/json/jsoncpp.o
 	$(CC) $(LD_FLAGS) -o $@ $^
 
