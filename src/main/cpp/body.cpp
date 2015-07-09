@@ -73,6 +73,19 @@ body::body(const body& b) {
     this->nom	= b.nom;	//nom
 }
 
+Json::Value body::toJson() {
+    Json::Value root;
+    root["name"] = this->nom;
+    root["rx"] = this->r.x;
+    root["ry"] = this->r.y;
+    root["rz"] = this->r.z;
+    root["vx"] = this->v.x;
+    root["vy"] = this->v.y;
+    root["vz"] = this->v.z;
+
+    return root;
+}
+
 void body::actualise() {
     // Calcul de la nouvelle position
     r.x += 0.5 * a.x * interval_p2 + v.x * interval;

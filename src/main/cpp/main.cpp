@@ -21,22 +21,25 @@ void computeInterval(vector<body>&);
 void computeFrame(vector<body>&, int&);
 void printSystem(vector<body>&);
 void printSimulationLog();
+void printSystemJson(vector<body>&, string);
 
 int main(int argc, char** argv) {
     int maxFrames = 365;
     int frameResolution = 60 * 60 * 24;
 
-    vector <body> bodies = getBodies();
+    string jsonOutputFile = "data/out.json";
 
     printSimulationLog();
-    printSystem(bodies);
+    vector <body> bodies = getBodies();
 
     int currentFrame = 0;
 
     while (currentFrame++ < maxFrames) {
         computeFrame(bodies, frameResolution);
     }
-    printSystem(bodies);
+
+    remove(jsonOutputFile.c_str());
+    printSystemJson(bodies, jsonOutputFile);
 }
 
 vector<body> getBodies() {
@@ -114,6 +117,29 @@ void printSystem(vector<body>& bodies) {
     for (int i =0; i < int(bodies.size()); i++) {
         cout << bodies[i].nom << " x:" << bodies[i].r.x << " y:" << bodies[i].r.y << " z:" << bodies[i].r.z<< "\n";
     }
+}
+
+void printSystemJson(vector<body>& bodies, string filename) {
+    clock_t begin = clock();
+    Json::Value json;
+    Json::Value bodies_node;
+
+    for (unsigned int i = 0; i < bodies.size(); i++) {
+        bodies_node.append(bodies[i].toJson());
+    }
+    json["bodies"] = bodies_node;
+    clock_t end = clock();
+    cout << "json took " << double(end - begin) / 1000 << " ms\n";
+
+    begin = clock();
+    ofstream jsonOut;
+    cout << filename.c_str();
+    jsonOut.open(filename.c_str());
+    jsonOut << json;
+    jsonOut.close();
+
+    end = clock();
+    cout << "disk took " << double(end - begin) / 1000 << " ms\n";
 }
 
 void printSimulationLog() {

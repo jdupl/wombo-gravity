@@ -27,7 +27,6 @@
 *.out
 *.app
 
-lib/
 build/
 obj/
 src/main/web/bower_components

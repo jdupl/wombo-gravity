@@ -9,6 +9,8 @@
 #ifndef _BODY_AND_VECT_
 #define _BODY_AND_VECT_
 
+#include "../../../lib/json/json/json.h"
+
 #define G (-6.6738480 * pow(10, -11))
 #define interval (1)
 #define interval_p2 (interval*interval)
@@ -52,6 +54,8 @@ class body {
         body(const body&);
 
         void actualise();
+
+        Json::Value toJson();
 };
 
 #endif
