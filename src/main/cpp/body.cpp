@@ -49,12 +49,21 @@ void vect::mult(double d) {
 body::~body() {
 }
 
-body::body(string str, double masse, vect position, vect vitesse, vect acc) {
-    nom = str;
-    m = masse;
-    r = position;
-    v = vitesse;
-    a = acc;
+body::body() {
+    nom = "";
+    m = 0;
+
+    r.x = 0;
+    r.y = 0;
+    r.z = 0;
+
+    v.x = 0;
+    v.y = 0;
+    v.z = 0;
+
+    a.x = 0;
+    a.y = 0;
+    a.z = 0;
 }
 
 body::body(vector<string> csv) {
@@ -87,6 +96,9 @@ Json::Value body::toJson() {
 }
 
 void body::actualise() {
+    a.x /= m;
+    a.y /= m;
+    a.z /= m;
     // Calcul de la nouvelle position
     r.x += 0.5 * a.x * interval_p2 + v.x * interval;
     r.y += 0.5 * a.y * interval_p2 + v.y * interval;
