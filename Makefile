@@ -3,7 +3,7 @@ SOURCE=src/main/cpp
 CPP_FILES=$(wildcard $(SOURCE)/*.cpp)
 OBJECTS=$(addprefix obj/,$(notdir $(CPP_FILES:.cpp=.o)))
 
-CFLAGS=-W -Wall -O3 -std=c++11 -fexceptions
+CFLAGS=-W -Wall -Ofast -march=native -std=c++11 -fexceptions -pipe
 LD_FLAGS=
 
 EXEC=build/wombo
