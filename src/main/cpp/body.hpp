@@ -49,7 +49,7 @@ class body {
         string nom; //nom
 
         ~body();
-        body(string str="-", double masse=0, vect position=0, vect vitesse=0, vect acc=0);
+        body();
         body(std::vector<string> csv);
         body(const body&);
 

@@ -67,37 +67,42 @@ vector<body> getBodies() {
 }
 
 void accel(body& b1, body& b2) {
-    double tempx, tempy, tempz, tempo;
+    double tmpX, tmpY, tmpZ, tmp;
 
-    tempx = b1.r.x - b2.r.x;
-    tempy = b1.r.y - b2.r.y;
-    tempz = b1.r.z - b2.r.z;
+    tmpX = b1.r.x - b2.r.x;
+    tmpY = b1.r.y - b2.r.y;
+    tmpZ = b1.r.z - b2.r.z;
 
-    double tmp = pow(tempx, 2) + pow(tempy, 2) + pow(tempz, 2);
+    tmp = pow(tmpX, 2) + pow(tmpY, 2) + pow(tmpZ, 2);
 
-    tempo = (b2.m) / (tmp * sqrt(tmp));
+    tmp = ((b1.m) * (b2.m)) / (tmp * sqrt(tmp));
 
-    b1.a.x += (tempo) * (tempx);
-    b1.a.y += (tempo) * (tempy);
-    b1.a.z += (tempo) * (tempz);
+    tmpX *= tmp;
+    tmpY *= tmp;
+    tmpZ *= tmp;
+
+    b1.a.x += tmpX;
+    b1.a.y += tmpY;
+    b1.a.z += tmpZ;
+
+    b2.a.x -= tmpX;
+    b2.a.y -= tmpY;
+    b2.a.z -= tmpZ;
 }
 
 void computeInterval(vector<body>& bodies) {
     int count = int(bodies.size());
 
-    for (int i = 0; i < count; i++) { // pour chaque astre
-        // Calcul de l'acceleration
-        bodies[i].a.reset();
-
-        for (int j = 0; j < count; j++) { // Pour l'interaction avec chaque autre astre
-            if (i != j) accel(bodies[i], bodies[j]);
+    for (int i = 0; i < count - 1; i++) {
+        for (int j = i + 1; j < count; j++) {
+            accel(bodies[i], bodies[j]);
         }
-
-        bodies[i].a.mult(G);
     }
 
     for (int i = 0; i < count; i++) { // pour chaque astre
+        bodies[i].a.mult(G);
         bodies[i].actualise();
+        bodies[i].a.reset();
     }
 }
 
