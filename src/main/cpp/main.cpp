@@ -15,19 +15,23 @@
 
 using namespace std;
 
+void appendJsonFrame(vector<body>& , Json::Value& , unsigned int);
 vector<body> getBodies();
 void accel(body&, body&);
 void computeInterval(vector<body>&);
 void computeFrame(vector<body>&, int&);
 void printSystem(vector<body>&);
 void printSimulationLog();
-void printSystemJson(vector<body>&, string);
+Json::Value getSystemJson(vector<body>&);
+void printTime(double);
+void printJson(Json::Value&, string, string);
 
 int main(int argc, char** argv) {
     int maxFrames = 365;
     int frameResolution = 60 * 60 * 24;
-
+    Json::Value jsonFrameBuffer;
     string jsonOutputFile = "data/out.json";
+    string jsonFrameFile = "data/frames.json";
 
     printSimulationLog();
     vector <body> bodies = getBodies();
@@ -36,13 +40,58 @@ int main(int argc, char** argv) {
 
     while (currentFrame++ < maxFrames) {
         computeFrame(bodies, frameResolution);
+        appendJsonFrame(bodies, jsonFrameBuffer, currentFrame);
     }
 
     remove(jsonOutputFile.c_str());
-    printSystemJson(bodies, jsonOutputFile);
+    printJson(jsonFrameBuffer, "frameArray", jsonFrameFile);
+    Json::Value tmp = getSystemJson(bodies);
+    printJson(tmp, "bodies", jsonOutputFile);
+
+    return 0;
+}
+
+void printJson(Json::Value& json, string rootName, string filename) {
+    Json::Value root;
+    root[rootName] = json;
+    ofstream jsonOut;
+
+    jsonOut.open(filename.c_str());
+    jsonOut << root;
+    jsonOut.close();
+}
+
+void appendJsonFrame(vector<body>& bodies, Json::Value& json, unsigned int frameNumber) {
+    Json::Value currentFrame;
+    stringstream ss;
+    ss << setw(10) << right << setfill('0') << double(frameNumber * YEARS_PER_DAY);
+
+    for (unsigned int i = 0; i < bodies.size(); i++) {
+        currentFrame[ss.str()].append(bodies[i].toJsonLight());
+    }
+
+    json.append(currentFrame);
 }
 
 vector<body> getBodies() {
+    vector <body> bodies;
+    ifstream inFile("data/data.json");
+
+    Json::Value root;
+    Json::Reader reader;
+
+    reader.parse( inFile, root);
+    unsigned int count = root["bodies"].size();
+
+    for(unsigned int i = 0; i < count; i++){
+        bodies.push_back(body(root["bodies"][i]));
+    }
+    inFile.close();
+    return bodies;
+}
+
+/*
+vector<body> getBodiesFromCsv() {
     vector <body> bodies;
     ifstream infile("data/data.csv");
 
@@ -65,6 +114,7 @@ vector<body> getBodies() {
     }
     return bodies;
 }
+*/
 
 void accel(body& b1, body& b2) {
     double tmpX, tmpY, tmpZ, tmp;
@@ -113,107 +163,91 @@ void computeFrame(vector<body>& bodies, int& intervalCount) {
     while (currentIteration++ < intervalCount) {
         computeInterval(bodies);
     }
-    clock_t end = clock();
 
-    cout << "frame took " << double(end - begin) / 1000 << " ms\n";
+    cout << "frame took ";
+    printTime(clock() - begin);
+    cout << "\n";
 }
 
 void printSystem(vector<body>& bodies) {
     for (int i =0; i < int(bodies.size()); i++) {
-        cout << bodies[i].nom << " x:" << bodies[i].r.x << " y:" << bodies[i].r.y << " z:" << bodies[i].r.z<< "\n";
+        cout
+            << bodies[i].nom
+            << " x:" << bodies[i].r.x
+            << " y:" << bodies[i].r.y
+            << " z:" << bodies[i].r.z
+            << endl;
     }
 }
 
-void printSystemJson(vector<body>& bodies, string filename) {
-    clock_t begin = clock();
-    Json::Value json;
+Json::Value getSystemJson(vector<body>& bodies) {
     Json::Value bodies_node;
 
     for (unsigned int i = 0; i < bodies.size(); i++) {
         bodies_node.append(bodies[i].toJson());
     }
-    json["bodies"] = bodies_node;
-    clock_t end = clock();
-    cout << "json took " << double(end - begin) / 1000 << " ms\n";
+    //json["bodies"] = bodies_node;
+    return bodies_node;
+}
 
-    begin = clock();
-    ofstream jsonOut;
-    cout << filename.c_str();
-    jsonOut.open(filename.c_str());
-    jsonOut << json;
-    jsonOut.close();
-
-    end = clock();
-    cout << "disk took " << double(end - begin) / 1000 << " ms\n";
+void printTime(double t) {
+    cout << setw(6) << left << setfill('0') << t / 1000 << " ms" << flush;
 }
 
 void printSimulationLog() {
 	cout
-	<< "  .                   .     .     .   .     . . .       . . .   .   . .         .   .   .       .   \n"
-	<< "   . . . .   .   . .         . . .     .     .r. . .   :i:   .   .   .   .               .   . .    \n"
-	<< ". . . .   . .           .     .     .  Z@@@B@W@W  .   .M@M@B@M2   . .   .   .           .     . . . \n"
-	<< "             .   .   . . .           . @B@22::     . . @W7 i2@8@         .         . .     .   . . .\n"
-	<< "  .                   .      r2:. .    2@B.           XB@   .7@B.      M@ZS   . .       .           \n"
-	<< "     .       .     .   . 7B@M@M@MB   . .M@;:r88@a    .M@@2.:7@@@       .2@B@M@.          .          \n"
-	<< ".   . . .   . .        2@8@02. i@M@     @8@B@M@8@ .   @B@Z@B@Z2 .        B@M@W@M.             .     \n"
-	<< " .   . . . . .   .   .  M@8      @B:    X@M.       . 7B@. 7@W. . .     .B@8. .::         .   .   .  \n"
-	<< ".       .        :M . .  B@M    MM@   . 7@@   .      X@8  .S@@  .      M@Mi       . .   . . .       \n"
-	<< " .   . . . .    2@W@2    .8@S7M@M@     . @MS.2S@B@   @MB .  B@7       X@87     .   . . :     . .   .\n"
-	<< ".   . . . .      W@M@M7   .Z@M@Z7   .   .8@8@8@M@8i  0@7    @W@  .   2@Z2 . . .     7M@M@2  . . . . \n"
-	<< "         . .S;    M@:@M@ . :M@7.   . .    r7   .     . .   . r2. @M@X@82       . i8@M@X@8@          \n"
-	<< ".   .     :W@8@B7 7B2 M@@S  78@7.     . .   .         .   . .     88@B@W7     :X@M@M7 MM@     . . . \n"
-	<< " . .   .   7W@M@8@M@8: :W@M2 0@@..             .       .             ;0@8B :M@M@B7   2M@:. . . .    \n"
-	<< "  .   .   .  B@B:i@M@M  .2@W@ r:    . . .         . . .   .     .   .   . @M@M0M@Wi .M@2            \n"
-	<< "      B@.  .  7@M7 .ii .   B2  .   . .         .         .     .     .     7..  7@M@Z@0.       8M@  \n"
-	<< "  . 7B@2.       @M@             .   .     . . .           . .   .                 7M@M. . . .0@8@M. \n"
-	<< "   MM@W2     .   B8@2        . .         .           .   .       .   . .         .2@W7   ..@M@MX .  \n"
-	<< ". @M@S@M@W. .   . .M@Z          .       .   .           .   .   .           . .   @MX   aM@M@7    . \n"
-	<< " .M@   SM@@@.    2 .r. . .     .     . .               . . . .     .               7  S@M@0r . .    \n"
-	<< "  .   . ..@M@M2 @@@ .     . . .   .           .           . . . .       . . . .      8@B2         . \n"
-	<< "         . .S@M@M@   . .   .       .   .   . .   .   .   . .     .               .   .M@0    . .   .\n"
-	<< "          .  7@MZ .           .     .       . .   .       .   .   .           .        X@M. . .     \n"
-	<< " .       .  8@87     .               .           . . .   .     .   .       .   .       .7@@7        \n"
-	<< "        .   :2.     .       .           . .           .     .     . . . . . .   . .      .M..   . . \n"
-	<< " .     .     . . .         .               .                   . . .       .   .   .   .         .  \n"
-	<< ". .       .         .     .     .               . .                       .     . .       .     .   \n"
-	<< "     .         .   .   .:2   ..X           .i22Xr  . . .7M2    77X22 .  2X   .  S7 . .   .          \n"
-	<< "  . .   .         .     @M@   @Mr     .   . @M@8@M@   @8@B@M@  8@W@M@Zi MM@ .  Z@X        .     .   \n"
-	<< "   . . .     .     .   .B@M@ .M@:        .  M@   @M2 @MW . MM8 @W.   @M: WZ@  M@S.           . .    \n"
-	<< "  .               .     @87M@ M8i .     . . @Z0a@MM .M@ . . @8 M@ .  7@8  B80a@X  .       .   .     \n"
-	<< "               .        8@ Z872@:  @8@M@0   M@S@M@M: @B     8@ @8    7BM   88@2  . .         .   . .\n"
-	<< "    .       .       .   @8  @Z@Zr ..27S2r . @W   .@B B@.  .7@8.M@    Z@7. . @M          .       . . \n"
-	<< "           .     .   .  8@   @W@i. . .     .B@XWZ@82 :8@MM8@8. @M@M@B@2     M@   .   .   . . . .    \n"
-	<< "            . .   .     02.   W2.           S28W87     2@MM:   2XZMX7     . Z2    .       . .       \n"
-	<< "   .   .   .   .       .     . .       .   . .   . . .     .         .     . . .       .           .\n"
-	<< "    .    i@M@B@.  BB@W@W@i r@Z. .2@2 X@   .r@2  @B.   :.i  :@@r . MM@M@B@Z@   WM@WM   ;8@8@W7       \n"
-	<< "     .  M@B228Zr  r8S@M0Xr M8@2. @B@ @82   X8@  @@.        @M@M.  :Z2BB@282. @8B2WM@i 7@W22@MB      \n"
-	<< "    .   @M0 .     .  M@    0@M@ @M@W.W@r   7@0. @8:   .   XM72@7.     @8. . @@i .  M@ 2B2 ..@M.     \n"
-	<< "       . MM@8@.      @W  . @W B@8.W@ BB7   S8M .@@.. .    B@  8@     :M@   .W@     @8 :@M@W@2r .    \n"
-	<< "  .         SM@M.   .M@    M@ 2MW @M M@.   :@Z  @B.      8@Z2r@BM   .:@M. . @W  . .M@ 7MB:@Ba .     \n"
-	<< "     . .     .8@..   @M. . @M.   .B@ 8BX . @Ma .8@   . . @8@B@B@Mi   iB@ .  W@X  .M@0.r@2  @80   .  \n"
-	<< "      . @M@M@B@2  @M@M@B@7.M@ .   @82 @Z@W@M@ . @M@Z@M@ @W2   .7@8   i@8  .  B@B@B@0  2@@   @B2 .   \n"
-	<< " .       77X2i     2r::27:  .      : . .207. .   ii772r  :   .   7 .  .i   .   277 . . :..   r.    .\n"
-	<< ".     .   .   . .         . . .   . .   . . .   .   .     . .   . .   .   .           . .         . \n"
-	<< "     .         .     . . . . .   .   . . .           .       .   .     . .     .   .       .       .\n"
-	<< "        .     .     .       . .     .         .   . .   .     . . . . . .         .               . \n"
-	<< " .     .       .           .                       . . . .   .       .     .     . .       . .      \n"
-	<< "        .                       .       . . .   .             .   . . .     .       .     . .       \n"
-	<< "     .   .   .   .       .     . . .     . . . . .     . .       .               . . .     . . .   .\n"
-	<< "    .   .     . .                 .             . .   . . .               .       .           .     \n"
-	<< "             .   .   . . .     . .   . .         .       .   . .   . .   .                 .        \n"
-	<< ". .           .       . . .   .   .     .               .                   .   .   .     . .   .   \n"
-	<< "         . .       . .       . W2a       .     . .   . .     . .       . .     .       . .       .  \n"
-	<< ".       . .     .   .         XB@M@MX     . . . .   .   .   iM@@@W@..   .                         . \n"
-	<< "   .     .   .       .       . .  .@Z@ . .             .   Z8@0a7MB@B      .         . . .   .      \n"
-	<< "        .   .   .                  i@8  XM@M@W7    X@B@8X  M@:.  i@8@M          .       . .     . . \n"
-	<< "           . .     .             .7@M0 @M@00a@B@ 2M@ZWX@M@:@87   @MrW@B    . . .   . .   .     .    \n"
-	<< "  .     .                   . 2X@M@BS @WM     @M7M@7  . @W@S@B  @Za  B@M  .   .                 .   \n"
-	<< " . .   . .   . .   .   .2@8@B@M@B@7  XM@   7S@M@@@@. .i@8@BXM@S@M@   78@ . .             .   . .    \n"
-	<< ".   . .     .       .   @8@BM   .   .M@2XM@@@S@WMZ@  M@M77@B 8@B@ .  X@8            . . .     .     \n"
-	<< " .   .         .   .     r8@8@X:     @@@M@Sr  8@:@8ZM@0   B@  Z@@@Z@8@M7 .     .   .                \n"
-	<< "      .   .       . .   .   7@@M@.  .B@2     8@0 X@B@.  ..@8i   @M@B@2  . .   .   .   .   . .   . . \n"
-	<< "       . .             .     . XZ:   MM@r. iM@@i .M@8.  .@M@   .           .     .         . . .    \n"
-	<< "  .       .   . .       .           . 0M@B@Z@8.    M@@@W@MZ .       .           .           .   .   \n"
-	<< "                       . .         .   . .:. . .     :i2   .           .   . . .                    \n"
-	<< endl;
+    << "            . . . . .   .   . . . .         . .   . . .   . . . .   .   . . . . \n"
+    << "   . .         . . .     . .   .  .7vq   .  :Uii .   . .   . .   .              \n"
+    << ".         .     . .   . .   . .Y@O@8@2r     @EG8@ZX     .   .     .       . . . \n"
+    << " . .     .         .     .   . iOY .       .OG . @Mr . . @5.       . . . . .   .\n"
+    << ".         . . . . . iP@M@O@     @E.,U2M .  i@F. 7M@   .  :8Z@Nv . .     . . . . \n"
+    << " . .       . . .   @8G . :B@   .E@O@N87. . @ZOM@Gr . .    r@k5G@   .     .   .  \n"
+    << ".     .   .   . . . @M.   @B.   7Zr .   . .E@ .v@   .    :@X  .   .       .     \n"
+    << " . . .   .   uB@ . . @E..@ML   . @E. :i5  :@2   M@ . .  ,@G  . . .     . . . . .\n"
+    << "        . .   @Z@5  ..@M@L. . .  B@Z@M@M: iFi   kEu : . @G. .     . Z8@j  .     \n"
+    << "   . .   qui .:@ @BU .i@i  . .   .     . .     . .  B@G@G. .     qM@qMB@   .   .\n"
+    << ". .   . .M@G@F:8N vO@  v@v    .         .   . . .   . uN@G5   5O@8L  M@   . .   \n"
+    << "   .     .v@Frk@8r  q@X LL . . .             . .       . v:rE@M@B7 .O@   . .    \n"
+    << "  .  O2 . ..@q  i   ..q .           .   .     .       . . . 7.  LZ@E@r. .   18i \n"
+    << "   rG@   . . @Oi     .     .     . . .     .   .     . .     . .  O@X.   .U@B@: \n"
+    << "  MO@MO . .   jO@ .   .   . .         . .     .     . .       . . @M    BZ@L.   \n"
+    << " iMr iO@Mi     :F: .   . . .   .     .     . .     .       . .   .7: :O@8J   . .\n"
+    << "  . . ..@B@..Z@   .           . . . .   .             . . . . .   . MM@ . . .   \n"
+    << " .     . .v@E@     .     .     .     . .     .       . . .         . @O.       .\n"
+    << ".       . LM@ . .       .         .     .   .     .   .   .   .   .   FZ8 .   . \n"
+    << " .   .   .55     . .     . .       . .     . .   . . .   .   .   .   . r8,     .\n"
+    << "    . . . . . .         .   .         .     .   . .       . . .   . . .   .   . \n"
+    << "   .       . . .           .       . .       .       .         .         . . .  \n"
+    << "      . .       .  i@   uJ         7@UOJ,   ZO@1  :GBFO:  @i. . @:  . .   . .   \n"
+    << " .         . .   . @G@  0@     . . @G  @G. @Gi MO :@:::@Z r@;  @8,   . .   .   .\n"
+    << "  .     .         .q@1@ qB  . . .  O@,vOO FO  . @YiB  . @. :@ @O  . .   . . . . \n"
+    << "     . . .         MB BEJ@  S@Z@L. @Mr:GG j@ .  Bk:@    Mr  :@M. .   .   . .    \n"
+    << ".   . . .     .    Z@  M@G  .   .  G@ ..@, Mq  v@ LM, :G@   .O1 . .   . . .     \n"
+    << " .   . . .   .     SP.  GO . . .   PMMqB:. :E@qB...@ZBGF   . @,    . .   .   .  \n"
+    << ".     . . .     . .     .     .   . . . . .     .     . . . . . . . . .         \n"
+    << " . . . rX@O@.. @0@P@, U@   @; O7 . @: .@ . , , .OB   qEOOBMM  :@E@i  vBMEq   . .\n"
+    << "      iMX ...   iB5 . @Eq @M@ @u. .G0 7M:   .  O@8X   :.@2, .X@:..@G.2@ .M@     \n"
+    << " . . . @MX:  .   @:.  8LB@P2O.B2   @r.:@      ,@ rB     M7 . @i.  i@ uMr:MF    .\n"
+    << ".   . .  :BE1    Mi   @ rO.:@ @:  .BX iM. .   @E, @k. . @7.  Mu . u8 v@:@B    . \n"
+    << " . . . , . @B  . @L  ,O:   u8 E@ .,@: :@.  . 0OPuGq@.  .M1   @O, iGO 0B. @M     \n"
+    << ". . . vZ@M@F. ,E@8@Ei @ .  .@ .q@8@i  :E@Z@P qF .  O0   @r  . PO@MF .i@   @i. . \n"
+    << " . . . .       . . .     . .       . . . .     . . . .   . . . .   .   .        \n"
+    << ". . .   . .   . . . .     .   .       . . . .       .   .         .   . . .     \n"
+    << " . . .   .     . .   . .     . . .   . .         . .         .   . .   . .     .\n"
+    << ". .   . .     .           .         .   . .     . .     .   .     . .     . . . \n"
+    << "   .   . . . . .           .   . .   . .       . .   .   .     . . .     .      \n"
+    << "              . . . . . . . .       .   .   .   . .     . .     . .     . .   . \n"
+    << " .   . . . .   .       . .     .   .     .   . .   .       .     . . .     . .  \n"
+    << "  .   .     .       .     . .     .       .     . . .       .   .   . .     .   \n"
+    << " .   .   . . .   .     .:@B@i  . . . . .   . . . iu@7.     .           .   .    \n"
+    << "  . .       . . .     .  :;i@E.     . . .       @MBj@ZB .   .     .     . . .   \n"
+    << "         .       . .   . .  ,@7 7@M@X:   OG@Gv BB. ..@G@         . .     . . .  \n"
+    << ".             .   .   .   .r@E.M@r, ME:.@Br UBO1@ . @u.B@   .   . . . .         \n"
+    << "       .   . .   .   :r8Z@O@i F@    .@M@M.  .@OFZ@ @M  :B0 . . .     . .   .   .\n"
+    << "    .   . .     . .u@M@7: .   @N:7@G@Z@M@  G@,@B.M@M  . @S  .   . .     .   .   \n"
+    << " . .   .     . . . ..XZ@J.   ;M@8Mi  @:OEEO@ .L@  E@MSk@G. .                    \n"
+    << "    .   .   . . .     .,@GO   @Z. . @B. @M.   @E. . EE0:    . .                 \n"
+    << " . .     .   .                i@M25@E:  :@ZUr@8L . . .     . .     .       . .  \n"
+    << "  .   .   .     .   . .   .   . :rv     . i75,.   . .   .       .       .   . . \n"
+    << endl;
 }
