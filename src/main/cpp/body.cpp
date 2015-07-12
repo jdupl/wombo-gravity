@@ -66,6 +66,20 @@ body::body() {
     a.z = 0;
 }
 
+body::body(Json::Value JsonBody) {
+    this->nom = JsonBody["_name"].asString();
+
+    this->m = JsonBody["m"].asDouble();
+
+    this->r.x = JsonBody["rx"].asDouble();
+    this->r.y = JsonBody["ry"].asDouble();
+    this->r.z = JsonBody["rz"].asDouble();
+
+    this->v.x = JsonBody["vx"].asDouble();
+    this->v.y = JsonBody["vy"].asDouble();
+    this->v.z = JsonBody["vz"].asDouble();
+}
+
 body::body(vector<string> csv) {
     string::size_type sz;
     this->nom = csv[0];
@@ -84,13 +98,24 @@ body::body(const body& b) {
 
 Json::Value body::toJson() {
     Json::Value root;
-    root["name"] = this->nom;
+    root["_name"] = this->nom;
+    root["m"] = this->m;
     root["rx"] = this->r.x;
     root["ry"] = this->r.y;
     root["rz"] = this->r.z;
     root["vx"] = this->v.x;
     root["vy"] = this->v.y;
     root["vz"] = this->v.z;
+
+    return root;
+}
+
+Json::Value body::toJsonLight() {
+    Json::Value root;
+    root["name"] = this->nom;
+    root["rx"] = this->r.x;
+    root["ry"] = this->r.y;
+    root["rz"] = this->r.z;
 
     return root;
 }

@@ -11,12 +11,15 @@
 
 #include "../../../lib/json/json/json.h"
 
-#define G (-6.6738480 * pow(10, -11))
-#define interval (1)
-#define interval_p2 (interval*interval)
-#define JOURNEE (3600 * 24)
-#define ANNEE (3600 * 24 * 365.242190517)
-#define SAVE_RES (JOURNEE * 1)
+//#define G (-6.6738480 * pow(10, -11))
+#define G (-6.6738480e-11)
+#define SECOND_PER_DAY (3600 * 24)
+#define SECOND_PER_YEAR (31556926)
+#define DAYS_PER_YEAR (365.242190517)
+#define YEARS_PER_DAY (0.002737909)
+
+const unsigned int interval = 1;
+const unsigned int interval_p2 = interval * interval;
 
 using namespace std;
 
@@ -50,12 +53,14 @@ class body {
 
         ~body();
         body();
-        body(std::vector<string> csv);
+        body(Json::Value);
+        body(std::vector<string>);
         body(const body&);
 
         void actualise();
 
         Json::Value toJson();
+        Json::Value toJsonLight();
 };
 
 #endif
