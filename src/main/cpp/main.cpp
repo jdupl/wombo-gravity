@@ -44,7 +44,8 @@ int main(int argc, char** argv) {
     }
 
     remove(jsonOutputFile.c_str());
-    printJson(jsonFrameBuffer, "frameArray", jsonFrameFile);
+    printJson(jsonFrameBuffer, "frames", jsonFrameFile);
+
     Json::Value tmp = getSystemJson(bodies);
     printJson(tmp, "bodies", jsonOutputFile);
 
@@ -62,14 +63,15 @@ void printJson(Json::Value& json, string rootName, string filename) {
 }
 
 void appendJsonFrame(vector<body>& bodies, Json::Value& json, unsigned int frameNumber) {
-    Json::Value currentFrame;
-    stringstream ss;
-    ss << setw(10) << right << setfill('0') << double(frameNumber * YEARS_PER_DAY);
+    Json::Value bodiesJson;
 
     for (unsigned int i = 0; i < bodies.size(); i++) {
-        currentFrame[ss.str()].append(bodies[i].toJsonLight());
+        bodiesJson.append(bodies[i].toJsonLight());
     }
 
+    Json::Value currentFrame;
+    currentFrame["frameNumber"] = frameNumber;
+    currentFrame["bodies"] = bodiesJson;
     json.append(currentFrame);
 }
 
@@ -89,32 +91,6 @@ vector<body> getBodies() {
     inFile.close();
     return bodies;
 }
-
-/*
-vector<body> getBodiesFromCsv() {
-    vector <body> bodies;
-    ifstream infile("data/data.csv");
-
-    while (infile) {
-        string s;
-        if (!getline(infile, s)) break;
-
-        istringstream ss(s);
-        vector <string> record;
-
-        while (ss) {
-            if (!getline(ss, s, ',')) break;
-            record.push_back(s);
-        }
-
-        bodies.push_back(body(record));
-    }
-    if (!infile.eof()) {
-        cerr << "Error reading file!\n";
-    }
-    return bodies;
-}
-*/
 
 void accel(body& b1, body& b2) {
     double tmpX, tmpY, tmpZ, tmp;
@@ -186,7 +162,6 @@ Json::Value getSystemJson(vector<body>& bodies) {
     for (unsigned int i = 0; i < bodies.size(); i++) {
         bodies_node.append(bodies[i].toJson());
     }
-    //json["bodies"] = bodies_node;
     return bodies_node;
 }
 

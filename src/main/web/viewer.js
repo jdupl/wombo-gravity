@@ -2,28 +2,39 @@ var container, stats;
 var scene, camera, renderer;
 var geometry, material, mesh;
 var bodies = {};
+var frames = {};
+var currentFrameIndex = 0;
+
+var fps = 10;
+
+var scaleFactor = 10000000;
 
 init();
 loadData();
 render();
 
 function loadData() {
+    $.getJSON("data/frames.json", function(data) {
+        frames = data.frames;
+        var firstFrame = frames[currentFrameIndex++];
 
-    $.getJSON("data/out.json", function(data) {
-        var jsonBodies = data.bodies;
+        jsonBodies = firstFrame.bodies;
         var geometry = new THREE.SphereGeometry(200, 8, 6);
 
         for (var i = 0; i < jsonBodies.length; i++) {
             var material = new THREE.PointCloudMaterial({size: 25, sizeAttenuation: false, color:Math.random() * 0xffffff});
             var body = new THREE.Mesh(geometry, material);
-            body.position.x = jsonBodies[i].rx / 10000000;
-            body.position.y = jsonBodies[i].ry / 10000000;
-            body.position.z = jsonBodies[i].rz / 10000000;
-            scene.add(body);
+
+            body.position.x = jsonBodies[i].rx / scaleFactor;
+            body.position.y = jsonBodies[i].ry / scaleFactor;
+            body.position.z = jsonBodies[i].rz / scaleFactor;
+
             var name = jsonBodies[i].name
             bodies[name] = body;
+
+            scene.add(body);
         }
-        setInterval(updateData, 100);
+        setInterval(updateData, 1000 / fps);
     });
 }
 
@@ -63,7 +74,23 @@ function init() {
 }
 
 function updateData() {
+    if (currentFrameIndex >= frames.length) {
+        // reset animation
+        currentFrameIndex = 0;
+    }
+    var frame = frames[currentFrameIndex++];
+    jsonBodies = frame.bodies;
 
+    for (var i = 0; i < jsonBodies.length; i++) {
+        jsonBody = jsonBodies[i];
+        var obj = bodies[jsonBody.name];
+
+        if (obj) {
+            obj.position.x = jsonBody.rx / scaleFactor;
+            obj.position.y = jsonBody.ry / scaleFactor;
+            obj.position.z = jsonBody.rz / scaleFactor;
+        }
+    }
 }
 
 function render() {
