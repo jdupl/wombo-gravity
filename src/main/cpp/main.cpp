@@ -11,7 +11,13 @@
 
 #include "../../../lib/json/json/json.h"
 
-#include "body.hpp"
+#ifndef FRAME_WRITER_H
+#define FRAME_WRITER_H
+#include "FrameWriter.hpp"
+#endif
+
+#include "BufferedBinaryWriter.hpp"
+#include "JsonWriter.hpp"
 
 using namespace std;
 
@@ -27,27 +33,35 @@ void printTime(double);
 void printJson(Json::Value&, string, string);
 
 int main(int argc, char** argv) {
+    printSimulationLog();
+
     int maxFrames = 365;
     int frameResolution = 60 * 60 * 24;
-    Json::Value jsonFrameBuffer;
-    string jsonOutputFile = "data/out.json";
+    bool isJson = false;
     string jsonFrameFile = "data/frames.json";
 
-    printSimulationLog();
     vector <body> bodies = getBodies();
+
+    BufferedBinaryWriter binWriter = BufferedBinaryWriter();
+    FrameWriter *frameWriter = &binWriter;
+
+    if (isJson) {
+        JsonWriter jsonWriter = JsonWriter(jsonFrameFile);
+        frameWriter = &jsonWriter;
+    }
 
     int currentFrame = 0;
 
     while (currentFrame++ < maxFrames) {
         computeFrame(bodies, frameResolution);
-        appendJsonFrame(bodies, jsonFrameBuffer, currentFrame);
-    }
+        Frame frame = Frame(currentFrame, bodies);
 
-    remove(jsonOutputFile.c_str());
-    printJson(jsonFrameBuffer, "frames", jsonFrameFile);
+        frameWriter->append(frame);
+    }
+    frameWriter->flush();
 
     Json::Value tmp = getSystemJson(bodies);
-    printJson(tmp, "bodies", jsonOutputFile);
+    printJson(tmp, "bodies", "data/out.json");
 
     return 0;
 }
@@ -60,19 +74,6 @@ void printJson(Json::Value& json, string rootName, string filename) {
     jsonOut.open(filename.c_str());
     jsonOut << root;
     jsonOut.close();
-}
-
-void appendJsonFrame(vector<body>& bodies, Json::Value& json, unsigned int frameNumber) {
-    Json::Value bodiesJson;
-
-    for (unsigned int i = 0; i < bodies.size(); i++) {
-        bodiesJson.append(bodies[i].toJsonLight());
-    }
-
-    Json::Value currentFrame;
-    currentFrame["frameNumber"] = frameNumber;
-    currentFrame["bodies"] = bodiesJson;
-    json.append(currentFrame);
 }
 
 vector<body> getBodies() {
