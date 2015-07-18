@@ -8,6 +8,11 @@
 #include <queue>
 
 using namespace std;
+/**
+ * Provides a human readable persistance of the frames but at high memory cost.
+ * All frames must be kept in memory before writing to disk due to the nature of
+ * the JSON format.
+ */
 
 JsonWriter::JsonWriter(string filename) {
     this->filename = filename;

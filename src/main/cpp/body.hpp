@@ -11,12 +11,7 @@
 
 #include "../../../lib/json/json/json.h"
 
-//#define G (-6.6738480 * pow(10, -11))
 #define G (-6.6738480e-11)
-#define SECOND_PER_DAY (3600 * 24)
-#define SECOND_PER_YEAR (31556926)
-#define DAYS_PER_YEAR (365.242190517)
-#define YEARS_PER_DAY (0.002737909)
 
 const unsigned int interval = 1;
 const unsigned int interval_p2 = interval * interval;
@@ -45,6 +40,7 @@ class body {
     friend ostream& operator << (ostream&, const body&);
 
     public:
+        int id;
         double m;	//masse
         vect r;		//position
         vect v;		//vitesse

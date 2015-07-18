@@ -1,7 +1,4 @@
-#ifndef FRAME_WRITER_H
-#define FRAME_WRITER_H
 #include "FrameWriter.hpp"
-#endif
 
 #include <stdio.h>
 #include <cstdio>
@@ -22,6 +19,5 @@ class JsonWriter : public FrameWriter {
         virtual void flush() override;
 
     private:
-        string filename;
         Json::Value framesJson;
 };

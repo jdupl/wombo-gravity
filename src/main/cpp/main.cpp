@@ -11,11 +11,7 @@
 
 #include "../../../lib/json/json/json.h"
 
-#ifndef FRAME_WRITER_H
-#define FRAME_WRITER_H
 #include "FrameWriter.hpp"
-#endif
-
 #include "BufferedBinaryWriter.hpp"
 #include "JsonWriter.hpp"
 
@@ -34,20 +30,22 @@ void printJson(Json::Value&, string, string);
 
 int main(int argc, char** argv) {
     printSimulationLog();
-
     int maxFrames = 365;
     int frameResolution = 60 * 60 * 24;
-    bool isJson = false;
+    bool useJson = false;
     string jsonFrameFile = "data/frames.json";
+    string binFilename = "data/frames.bin";
+
+    FrameWriter *frameWriter = NULL ;
+    BufferedBinaryWriter binWriter = BufferedBinaryWriter(binFilename, 10);
+    JsonWriter jsonWriter = JsonWriter(jsonFrameFile);
 
     vector <body> bodies = getBodies();
 
-    BufferedBinaryWriter binWriter = BufferedBinaryWriter();
-    FrameWriter *frameWriter = &binWriter;
-
-    if (isJson) {
-        JsonWriter jsonWriter = JsonWriter(jsonFrameFile);
+    if (useJson) {
         frameWriter = &jsonWriter;
+    } else {
+        frameWriter = &binWriter;
     }
 
     int currentFrame = 0;
@@ -83,11 +81,13 @@ vector<body> getBodies() {
     Json::Value root;
     Json::Reader reader;
 
-    reader.parse( inFile, root);
+    reader.parse(inFile, root);
     unsigned int count = root["bodies"].size();
 
-    for(unsigned int i = 0; i < count; i++){
-        bodies.push_back(body(root["bodies"][i]));
+    for (unsigned int i = 0; i < count; i++) {
+        body b = body(root["bodies"][i]);
+        b.id = int(i);
+        bodies.push_back(b);
     }
     inFile.close();
     return bodies;
