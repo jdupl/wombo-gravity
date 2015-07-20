@@ -27,13 +27,39 @@ void BufferedBinaryWriter::append(Frame frame) {
 }
 
 void BufferedBinaryWriter::flush() {
-    FILE* binFile = fopen("data/bin", "ab");
+    // Header of the frame
+    struct FrameData {
+        int frameNumber;
+        int bodyCount;
+    };
+
+    struct BodyData {
+        int id;
+        double rx;
+        double ry;
+        double rz;
+    };
+
+    FILE* binFile = fopen(filename.c_str(), "ab");
 
     while (!frameBuffer.empty()) {
         Frame frame = frameBuffer.front();
         this->frameBuffer.pop();
-        os.write(reinterpret_cast<char const *>(std::addressof(obj)), sizeof(Type));
-        fwrite(frame, 1, sizeof(Frame), binFile);
+
+        FrameData header;
+        header.frameNumber = frame.frameNumber;
+        header.bodyCount = frame.bodies.size();
+
+        fwrite(&header, sizeof(FrameData), 1, binFile);
+
+        for (unsigned int i = 0; i < frame.bodies.size(); i++) {
+            BodyData bodyData;
+            bodyData.id = frame.bodies[i].id;
+            bodyData.rx = frame.bodies[i].rx;
+            bodyData.ry = frame.bodies[i].ry;
+            bodyData.rz = frame.bodies[i].rz;
+            fwrite(&bodyData, sizeof(BodyData), 1, binFile);
+        }
     }
     fclose(binFile);
 }

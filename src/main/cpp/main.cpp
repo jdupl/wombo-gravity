@@ -3,6 +3,7 @@
 #include <math.h>
 #include <iostream>
 #include <fstream>
+#include <cstring>
 #include <string>
 #include <iomanip>
 #include <sstream>
@@ -35,9 +36,10 @@ int main(int argc, char** argv) {
     bool useJson = false;
     string jsonFrameFile = "data/frames.json";
     string binFilename = "data/frames.bin";
+    string outBinFile = "data/out.bin";
 
     FrameWriter *frameWriter = NULL ;
-    BufferedBinaryWriter binWriter = BufferedBinaryWriter(binFilename, 10);
+    BufferedBinaryWriter binWriter = BufferedBinaryWriter(outBinFile, 10);
     JsonWriter jsonWriter = JsonWriter(jsonFrameFile);
 
     vector <body> bodies = getBodies();
@@ -46,6 +48,7 @@ int main(int argc, char** argv) {
         frameWriter = &jsonWriter;
     } else {
         frameWriter = &binWriter;
+        remove(outBinFile.c_str());
     }
 
     int currentFrame = 0;
@@ -96,9 +99,9 @@ vector<body> getBodies() {
 void accel(body& b1, body& b2) {
     double tmpX, tmpY, tmpZ, tmp;
 
-    tmpX = b1.r.x - b2.r.x;
-    tmpY = b1.r.y - b2.r.y;
-    tmpZ = b1.r.z - b2.r.z;
+    tmpX = b1.rx - b2.rx;
+    tmpY = b1.ry - b2.ry;
+    tmpZ = b1.rz - b2.rz;
 
     tmp = pow(tmpX, 2) + pow(tmpY, 2) + pow(tmpZ, 2);
 
@@ -108,13 +111,13 @@ void accel(body& b1, body& b2) {
     tmpY *= tmp;
     tmpZ *= tmp;
 
-    b1.a.x += tmpX;
-    b1.a.y += tmpY;
-    b1.a.z += tmpZ;
+    b1.ax += tmpX;
+    b1.ay += tmpY;
+    b1.az += tmpZ;
 
-    b2.a.x -= tmpX;
-    b2.a.y -= tmpY;
-    b2.a.z -= tmpZ;
+    b2.ax -= tmpX;
+    b2.ay -= tmpY;
+    b2.az -= tmpZ;
 }
 
 void computeInterval(vector<body>& bodies) {
@@ -127,9 +130,14 @@ void computeInterval(vector<body>& bodies) {
     }
 
     for (int i = 0; i < count; i++) { // pour chaque astre
-        bodies[i].a.mult(G);
+        bodies[i].ax *= G;
+        bodies[i].ay *= G;
+        bodies[i].az *= G;
+
         bodies[i].actualise();
-        bodies[i].a.reset();
+        bodies[i].ax = 0;
+        bodies[i].ay = 0;
+        bodies[i].az = 0;
     }
 }
 
@@ -150,9 +158,9 @@ void printSystem(vector<body>& bodies) {
     for (int i =0; i < int(bodies.size()); i++) {
         cout
             << bodies[i].nom
-            << " x:" << bodies[i].r.x
-            << " y:" << bodies[i].r.y
-            << " z:" << bodies[i].r.z
+            << " x:" << bodies[i].rx
+            << " y:" << bodies[i].ry
+            << " z:" << bodies[i].rz
             << endl;
     }
 }

@@ -24,7 +24,7 @@ void JsonWriter::append(Frame frame) {
 
     Json::Value bodies_node;
     for (unsigned int i = 0; i < frame.bodies.size(); i++) {
-        bodies_node.append(frame.bodies[i].toJson());
+        bodies_node.append(frame.bodies[i].toJsonLight());
     }
 
     frameJson["bodies"] = bodies_node;

@@ -11,41 +11,6 @@
 
 using namespace std;
 
-vect& vect::operator =	(const vect& w){
-    this->x = w.x;
-    this->y = w.y;
-    this->z = w.z;
-
-    return (*this);
-}
-
-vect::~vect() {
-}
-
-vect::vect(double xi, double yi, double zi) {
-    x = xi;
-    y = yi;
-    z = zi;
-}
-
-vect::vect(const vect& v) {
-    x = v.x;
-    y = v.y;
-    z = v.z;
-}
-
-void vect::reset() {
-    x = 0;
-    y = 0;
-    z = 0;
-}
-
-void vect::mult(double d) {
-    x *= d;
-    y *= d;
-    z *= d;
-}
-
 body::~body() {
 }
 
@@ -53,17 +18,17 @@ body::body() {
     nom = "";
     m = 0;
 
-    r.x = 0;
-    r.y = 0;
-    r.z = 0;
+    rx = 0;
+    ry = 0;
+    rz = 0;
 
-    v.x = 0;
-    v.y = 0;
-    v.z = 0;
+    vx = 0;
+    vy = 0;
+    vz = 0;
 
-    a.x = 0;
-    a.y = 0;
-    a.z = 0;
+    ax = 0;
+    ay = 0;
+    az = 0;
 }
 
 body::body(Json::Value JsonBody) {
@@ -71,41 +36,39 @@ body::body(Json::Value JsonBody) {
 
     this->m = JsonBody["m"].asDouble();
 
-    this->r.x = JsonBody["rx"].asDouble();
-    this->r.y = JsonBody["ry"].asDouble();
-    this->r.z = JsonBody["rz"].asDouble();
+    this->rx = JsonBody["rx"].asDouble();
+    this->ry = JsonBody["ry"].asDouble();
+    this->rz = JsonBody["rz"].asDouble();
 
-    this->v.x = JsonBody["vx"].asDouble();
-    this->v.y = JsonBody["vy"].asDouble();
-    this->v.z = JsonBody["vz"].asDouble();
+    this->vx = JsonBody["vx"].asDouble();
+    this->vy = JsonBody["vy"].asDouble();
+    this->vz = JsonBody["vz"].asDouble();
 }
 
 body::body(vector<string> csv) {
     string::size_type sz;
     this->nom = csv[0];
     this->m = stod(csv[1]);
-    this->r = vect(stod(csv[2]), stod(csv[3]), stod(csv[4]));
-    this->v = vect(stod(csv[5]), stod(csv[6]), stod(csv[7]));
-}
 
-body::body(const body& b) {
-    this-> m	= b.m;	//masse
-    this-> r	= b.r;	//position
-    this-> v	= b.v;		//vitesse
-    this-> a	= b.a;	//acceleration
-    this->nom	= b.nom;	//nom
+    this->rx = stod(csv[2]);
+    this->ry = stod(csv[3]);
+    this->rz = stod(csv[4]);
+
+    this->vx = stod(csv[5]);
+    this->vy = stod(csv[6]);
+    this->vz = stod(csv[7]);
 }
 
 Json::Value body::toJson() {
     Json::Value root;
     root["_name"] = this->nom;
     root["m"] = this->m;
-    root["rx"] = this->r.x;
-    root["ry"] = this->r.y;
-    root["rz"] = this->r.z;
-    root["vx"] = this->v.x;
-    root["vy"] = this->v.y;
-    root["vz"] = this->v.z;
+    root["rx"] = this->rx;
+    root["ry"] = this->ry;
+    root["rz"] = this->rz;
+    root["vx"] = this->vx;
+    root["vy"] = this->vy;
+    root["vz"] = this->vz;
 
     return root;
 }
@@ -113,23 +76,24 @@ Json::Value body::toJson() {
 Json::Value body::toJsonLight() {
     Json::Value root;
     root["name"] = this->nom;
-    root["rx"] = this->r.x;
-    root["ry"] = this->r.y;
-    root["rz"] = this->r.z;
+    root["rx"] = this->rx;
+    root["ry"] = this->ry;
+    root["rz"] = this->rz;
 
     return root;
 }
 
 void body::actualise() {
-    a.x /= m;
-    a.y /= m;
-    a.z /= m;
+    ax /= m;
+    ay /= m;
+    az /= m;
     // Calcul de la nouvelle position
-    r.x += 0.5 * a.x * interval_p2 + v.x * interval;
-    r.y += 0.5 * a.y * interval_p2 + v.y * interval;
-    r.z += 0.5 * a.z * interval_p2 + v.z * interval;
+    rx += 0.5 * ax * interval_p2 + vx * interval;
+    ry += 0.5 * ay * interval_p2 + vy * interval;
+    rz += 0.5 * az * interval_p2 + vz * interval;
+
     // Calcul de la nouvelle vitesse
-    v.x += a.x * interval;
-    v.y += a.y * interval;
-    v.z += a.z * interval;
+    vx += ax * interval;
+    vy += ay * interval;
+    vz += az * interval;
 }
