@@ -178,8 +178,8 @@ function onMouseMove(e) {
 
 init();
 
-// var provider = new BinaryFrameProvider();
-var provider = new JsonFrameProvider();
+var provider = new BinaryFrameProvider();
+// var provider = new JsonFrameProvider();
 provider.load();
 
 render();

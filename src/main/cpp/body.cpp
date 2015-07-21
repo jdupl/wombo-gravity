@@ -75,7 +75,7 @@ Json::Value body::toJson() {
 
 Json::Value body::toJsonLight() {
     Json::Value root;
-    root["name"] = this->nom;
+    root["id"] = this->id;
     root["rx"] = this->rx;
     root["ry"] = this->ry;
     root["rz"] = this->rz;
