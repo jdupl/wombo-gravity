@@ -29,12 +29,12 @@ void BufferedBinaryWriter::append(Frame frame) {
 void BufferedBinaryWriter::flush() {
     // Header of the frame
     struct FrameData {
-        int frameNumber;
-        int bodyCount;
+        uint32_t frameNumber;
+        uint32_t bodyCount;
     };
 
     struct BodyData {
-        int id;
+        uint32_t id;
         double rx;
         double ry;
         double rz;

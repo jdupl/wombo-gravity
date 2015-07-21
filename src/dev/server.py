@@ -11,9 +11,18 @@ class WomboHandler(BaseHTTPRequestHandler):
             try:
                 f = open(self.path[1:])
                 self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(bytes(f.read(), 'utf8'))
+
+                if self.path.endswith('bin'):
+                    f.close()
+                    f = open(self.path[1:], 'rb')
+                    self.send_header('Content-type', 'application/octet-stream')
+                    self.end_headers()
+                    self.wfile.write(f.read())
+                else:
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(bytes(f.read(), 'utf8'))
+
             except Exception as e:
                 print(e)
                 self.send_error(404, 'File Not Found: %s' % self.path)
