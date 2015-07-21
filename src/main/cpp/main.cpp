@@ -8,37 +8,53 @@
 #include <sstream>
 #include <vector>
 #include <ctime>
+#include <limits>       //for numeric_limits<double>
 
 #include "../../../lib/json/json/json.h"
 
 #include "body.hpp"
 
+static unsigned int frameNb = 0;
 using namespace std;
 
-void appendJsonFrame(vector<body>& , Json::Value& , unsigned int);
+/**/
 vector<body> getBodies();
-void accel(body&, body&);
-void computeInterval(vector<body>&);
-void computeFrame(vector<body>&, int&);
-void printSystem(vector<body>&);
-void printSimulationLog();
+void appendJsonFrame(const vector<body>& , Json::Value& , unsigned int);
 Json::Value getSystemJson(vector<body>&);
-void printTime(double);
 void printJson(Json::Value&, string, string);
+void printTime(double);
+/**/
+
+/**/
+double tidalForce(body&, body&);
+void computeTimeScales(vector<body>&);
+void computeInterval(vector<body>&, const unsigned int&);
+void computeFrame(vector<body>&, const unsigned int&);
+void accel(body&, body&, const unsigned int, const unsigned int);
+/**/
+
+/**/
+double systemEnergy(vector<body>&);
+void printSimulationLog(vector<body>&, double);
+void printTidalForces(vector<body>&);
+/**/
 
 int main(int argc, char** argv) {
-    int maxFrames = 365;
-    int frameResolution = 60 * 60 * 24;
+    const unsigned int maxFrames = 365;
+    const unsigned int frameResolution = 60 * 60 * 24;
+
     Json::Value jsonFrameBuffer;
     string jsonOutputFile = "data/out.json";
     string jsonFrameFile = "data/frames.json";
 
-    printSimulationLog();
+    clock_t begin = clock();
     vector <body> bodies = getBodies();
 
-    int currentFrame = 0;
+    unsigned int currentFrame = 0;
+    double energy = systemEnergy(bodies);
 
-    while (currentFrame++ < maxFrames) {
+    appendJsonFrame(bodies, jsonFrameBuffer, currentFrame);
+    while (currentFrame ++ < maxFrames) {
         computeFrame(bodies, frameResolution);
         appendJsonFrame(bodies, jsonFrameBuffer, currentFrame);
     }
@@ -47,6 +63,13 @@ int main(int argc, char** argv) {
     printJson(jsonFrameBuffer, "frameArray", jsonFrameFile);
     Json::Value tmp = getSystemJson(bodies);
     printJson(tmp, "bodies", jsonOutputFile);
+
+    printSimulationLog(bodies, energy);
+//  printTidalForces(bodies);
+
+    cout << "simulation took ";
+    printTime(clock() - begin);
+    cout << "\n";
 
     return 0;
 }
@@ -61,10 +84,10 @@ void printJson(Json::Value& json, string rootName, string filename) {
     jsonOut.close();
 }
 
-void appendJsonFrame(vector<body>& bodies, Json::Value& json, unsigned int frameNumber) {
+void appendJsonFrame(const vector<body>& bodies, Json::Value& json, unsigned int frameNumber) {
     Json::Value currentFrame;
     stringstream ss;
-    ss << setw(10) << right << setfill('0') << double(frameNumber * YEARS_PER_DAY);
+    ss << setw(10) << right << setfill('0') << frameNumber;
 
     for (unsigned int i = 0; i < bodies.size(); i++) {
         currentFrame[ss.str()].append(bodies[i].toJsonLight());
@@ -90,33 +113,10 @@ vector<body> getBodies() {
     return bodies;
 }
 
-/*
-vector<body> getBodiesFromCsv() {
-    vector <body> bodies;
-    ifstream infile("data/data.csv");
+void accel(body& b1, body& b2, const unsigned int i, const unsigned int j) {
 
-    while (infile) {
-        string s;
-        if (!getline(infile, s)) break;
+    if( b1.memo[j].timer != 0) return;
 
-        istringstream ss(s);
-        vector <string> record;
-
-        while (ss) {
-            if (!getline(ss, s, ',')) break;
-            record.push_back(s);
-        }
-
-        bodies.push_back(body(record));
-    }
-    if (!infile.eof()) {
-        cerr << "Error reading file!\n";
-    }
-    return bodies;
-}
-*/
-
-void accel(body& b1, body& b2) {
     double tmpX, tmpY, tmpZ, tmp;
 
     tmpX = b1.r.x - b2.r.x;
@@ -131,53 +131,100 @@ void accel(body& b1, body& b2) {
     tmpY *= tmp;
     tmpZ *= tmp;
 
-    b1.a.x += tmpX;
-    b1.a.y += tmpY;
-    b1.a.z += tmpZ;
+    b1.memo[j].a.x = tmpX;
+    b1.memo[j].a.y = tmpY;
+    b1.memo[j].a.z = tmpZ;
 
-    b2.a.x -= tmpX;
-    b2.a.y -= tmpY;
-    b2.a.z -= tmpZ;
+    b2.memo[i].a.x = -tmpX;
+    b2.memo[i].a.y = -tmpY;
+    b2.memo[i].a.z = -tmpZ;
+}
+
+double tidalForce(body& b1, body& b2) {
+    double tmpX, tmpY, tmpZ, tmp;
+
+    tmpX = b1.r.x - b2.r.x;
+    tmpY = b1.r.y - b2.r.y;
+    tmpZ = b1.r.z - b2.r.z;
+
+    tmp = pow(tmpX, 2) + pow(tmpY, 2) + pow(tmpZ, 2);
+
+    tmp = ((b1.m) * (b2.m)) / (tmp * sqrt(tmp));
+
+    return tmp;
+}
+
+void computeTimeScales(vector<body>& bodies) {
+    int count = int(bodies.size());
+    double tmp1, tmp2, tmp3;
+    gravAcc tmp;
+
+    for (int i = 0; i < count; i++) {
+        bodies[i].memo.clear();
+    }
+
+    for (int i = 0; i < count; i++) {
+        tmp.limit = 0;
+        bodies[i].timeStep = 0;
+        bodies[i].memo.push_back(tmp);
+        for (int j = i + 1; j < count; j++) {
+            tmp3 = - tidalForce(bodies[i], bodies[j]);
+            tmp1 = tmp3 / bodies[i].m;
+            tmp2 = tmp3 / bodies[j].m;
+            tmp3 = max( tmp1, tmp2);
+//time steps must be divisor of 60 * 60 * 24 * 1000 = 86 400 000
+            int odg = 0;
+            while(1){
+                if( tmp3 > pow(100, -7 -odg) ){
+                    //tmp.limit = MDT;
+                    tmp.limit = pow( 2, odg);
+                    break;
+                }
+                odg ++;
+            }
+            if (tmp.limit == 0 ) cout << "gros probleme" << endl;
+            if( tmp.timer != 0 ) cout << "gros probleme" << endl;
+
+            bodies[i].memo.push_back(tmp);
+            bodies[j].memo.push_back(tmp);
+
+        }
+    }
 }
 
 void computeInterval(vector<body>& bodies) {
-    int count = int(bodies.size());
+    const unsigned int count = bodies.size();
 
-    for (int i = 0; i < count - 1; i++) {
-        for (int j = i + 1; j < count; j++) {
-            accel(bodies[i], bodies[j]);
+    for (unsigned int i = 0; i < count; i++) {
+        for (unsigned int j = i + 1; j < count; j++) {
+            accel(bodies[i], bodies[j], i ,j);
         }
     }
 
-    for (int i = 0; i < count; i++) { // pour chaque astre
-        bodies[i].a.mult(G);
+    for (unsigned int i = 0; i < count; i++) {
         bodies[i].actualise();
-        bodies[i].a.reset();
     }
 }
 
-void computeFrame(vector<body>& bodies, int& intervalCount) {
-    clock_t begin = clock();
-    int currentIteration = 0;
+void computeFrame(vector<body>& bodies, const unsigned int& intervalCount) {
 
-    while (currentIteration++ < intervalCount) {
+    clock_t begin = clock();
+
+
+    computeTimeScales(bodies);
+
+    double  currentIteration = 0;
+    while(currentIteration < intervalCount) {
         computeInterval(bodies);
+        currentIteration += DT;
     }
 
-    cout << "frame took ";
+
+    cout << "frame " << setfill(' ') << setw(3) << right << frameNb++ << " took ";
     printTime(clock() - begin);
     cout << "\n";
-}
 
-void printSystem(vector<body>& bodies) {
-    for (int i =0; i < int(bodies.size()); i++) {
-        cout
-            << bodies[i].nom
-            << " x:" << bodies[i].r.x
-            << " y:" << bodies[i].r.y
-            << " z:" << bodies[i].r.z
-            << endl;
-    }
+
 }
 
 Json::Value getSystemJson(vector<body>& bodies) {
@@ -186,68 +233,100 @@ Json::Value getSystemJson(vector<body>& bodies) {
     for (unsigned int i = 0; i < bodies.size(); i++) {
         bodies_node.append(bodies[i].toJson());
     }
-    //json["bodies"] = bodies_node;
+
     return bodies_node;
 }
 
 void printTime(double t) {
-    cout << setw(6) << left << setfill('0') << t / 1000 << " ms" << flush;
+    cout.precision(1);
+    cout << setw(5) << fixed << left << setfill('0') << t / 1000 << " ms" << flush;
 }
 
-void printSimulationLog() {
-	cout
-    << "            . . . . .   .   . . . .         . .   . . .   . . . .   .   . . . . \n"
-    << "   . .         . . .     . .   .  .7vq   .  :Uii .   . .   . .   .              \n"
-    << ".         .     . .   . .   . .Y@O@8@2r     @EG8@ZX     .   .     .       . . . \n"
-    << " . .     .         .     .   . iOY .       .OG . @Mr . . @5.       . . . . .   .\n"
-    << ".         . . . . . iP@M@O@     @E.,U2M .  i@F. 7M@   .  :8Z@Nv . .     . . . . \n"
-    << " . .       . . .   @8G . :B@   .E@O@N87. . @ZOM@Gr . .    r@k5G@   .     .   .  \n"
-    << ".     .   .   . . . @M.   @B.   7Zr .   . .E@ .v@   .    :@X  .   .       .     \n"
-    << " . . .   .   uB@ . . @E..@ML   . @E. :i5  :@2   M@ . .  ,@G  . . .     . . . . .\n"
-    << "        . .   @Z@5  ..@M@L. . .  B@Z@M@M: iFi   kEu : . @G. .     . Z8@j  .     \n"
-    << "   . .   qui .:@ @BU .i@i  . .   .     . .     . .  B@G@G. .     qM@qMB@   .   .\n"
-    << ". .   . .M@G@F:8N vO@  v@v    .         .   . . .   . uN@G5   5O@8L  M@   . .   \n"
-    << "   .     .v@Frk@8r  q@X LL . . .             . .       . v:rE@M@B7 .O@   . .    \n"
-    << "  .  O2 . ..@q  i   ..q .           .   .     .       . . . 7.  LZ@E@r. .   18i \n"
-    << "   rG@   . . @Oi     .     .     . . .     .   .     . .     . .  O@X.   .U@B@: \n"
-    << "  MO@MO . .   jO@ .   .   . .         . .     .     . .       . . @M    BZ@L.   \n"
-    << " iMr iO@Mi     :F: .   . . .   .     .     . .     .       . .   .7: :O@8J   . .\n"
-    << "  . . ..@B@..Z@   .           . . . .   .             . . . . .   . MM@ . . .   \n"
-    << " .     . .v@E@     .     .     .     . .     .       . . .         . @O.       .\n"
-    << ".       . LM@ . .       .         .     .   .     .   .   .   .   .   FZ8 .   . \n"
-    << " .   .   .55     . .     . .       . .     . .   . . .   .   .   .   . r8,     .\n"
-    << "    . . . . . .         .   .         .     .   . .       . . .   . . .   .   . \n"
-    << "   .       . . .           .       . .       .       .         .         . . .  \n"
-    << "      . .       .  i@   uJ         7@UOJ,   ZO@1  :GBFO:  @i. . @:  . .   . .   \n"
-    << " .         . .   . @G@  0@     . . @G  @G. @Gi MO :@:::@Z r@;  @8,   . .   .   .\n"
-    << "  .     .         .q@1@ qB  . . .  O@,vOO FO  . @YiB  . @. :@ @O  . .   . . . . \n"
-    << "     . . .         MB BEJ@  S@Z@L. @Mr:GG j@ .  Bk:@    Mr  :@M. .   .   . .    \n"
-    << ".   . . .     .    Z@  M@G  .   .  G@ ..@, Mq  v@ LM, :G@   .O1 . .   . . .     \n"
-    << " .   . . .   .     SP.  GO . . .   PMMqB:. :E@qB...@ZBGF   . @,    . .   .   .  \n"
-    << ".     . . .     . .     .     .   . . . . .     .     . . . . . . . . .         \n"
-    << " . . . rX@O@.. @0@P@, U@   @; O7 . @: .@ . , , .OB   qEOOBMM  :@E@i  vBMEq   . .\n"
-    << "      iMX ...   iB5 . @Eq @M@ @u. .G0 7M:   .  O@8X   :.@2, .X@:..@G.2@ .M@     \n"
-    << " . . . @MX:  .   @:.  8LB@P2O.B2   @r.:@      ,@ rB     M7 . @i.  i@ uMr:MF    .\n"
-    << ".   . .  :BE1    Mi   @ rO.:@ @:  .BX iM. .   @E, @k. . @7.  Mu . u8 v@:@B    . \n"
-    << " . . . , . @B  . @L  ,O:   u8 E@ .,@: :@.  . 0OPuGq@.  .M1   @O, iGO 0B. @M     \n"
-    << ". . . vZ@M@F. ,E@8@Ei @ .  .@ .q@8@i  :E@Z@P qF .  O0   @r  . PO@MF .i@   @i. . \n"
-    << " . . . .       . . .     . .       . . . .     . . . .   . . . .   .   .        \n"
-    << ". . .   . .   . . . .     .   .       . . . .       .   .         .   . . .     \n"
-    << " . . .   .     . .   . .     . . .   . .         . .         .   . .   . .     .\n"
-    << ". .   . .     .           .         .   . .     . .     .   .     . .     . . . \n"
-    << "   .   . . . . .           .   . .   . .       . .   .   .     . . .     .      \n"
-    << "              . . . . . . . .       .   .   .   . .     . .     . .     . .   . \n"
-    << " .   . . . .   .       . .     .   .     .   . .   .       .     . . .     . .  \n"
-    << "  .   .     .       .     . .     .       .     . . .       .   .   . .     .   \n"
-    << " .   .   . . .   .     .:@B@i  . . . . .   . . . iu@7.     .           .   .    \n"
-    << "  . .       . . .     .  :;i@E.     . . .       @MBj@ZB .   .     .     . . .   \n"
-    << "         .       . .   . .  ,@7 7@M@X:   OG@Gv BB. ..@G@         . .     . . .  \n"
-    << ".             .   .   .   .r@E.M@r, ME:.@Br UBO1@ . @u.B@   .   . . . .         \n"
-    << "       .   . .   .   :r8Z@O@i F@    .@M@M.  .@OFZ@ @M  :B0 . . .     . .   .   .\n"
-    << "    .   . .     . .u@M@7: .   @N:7@G@Z@M@  G@,@B.M@M  . @S  .   . .     .   .   \n"
-    << " . .   .     . . . ..XZ@J.   ;M@8Mi  @:OEEO@ .L@  E@MSk@G. .                    \n"
-    << "    .   .   . . .     .,@GO   @Z. . @B. @M.   @E. . EE0:    . .                 \n"
-    << " . .     .   .                i@M25@E:  :@ZUr@8L . . .     . .     .       . .  \n"
-    << "  .   .   .     .   . .   .   . :rv     . i75,.   . .   .       .       .   . . \n"
-    << endl;
+double systemEnergy(vector<body>& bodies) {
+    int count = int(bodies.size());
+    double totalEnergy = 0;
+    double tmpX, tmpY, tmpZ, tmpD, tmp;
+
+    for (int i = 0; i < count; i++) {
+        tmp =
+            pow(bodies[i].v.x, 2) +
+            pow(bodies[i].v.y, 2) +
+            pow(bodies[i].v.z, 2);
+
+        tmp *= bodies[i].m * 0.5 * G_INV;
+
+        for (int j = i + 1; j < count; j++) {
+
+            tmpX = bodies[i].r.x - bodies[j].r.x;
+            tmpY = bodies[i].r.y - bodies[j].r.y;
+            tmpZ = bodies[i].r.z - bodies[j].r.z;
+            tmpD = sqrt(pow(tmpX, 2) + pow(tmpY, 2) + pow(tmpZ, 2));
+            tmp += (bodies[i].m * bodies[j].m) / tmpD / G;
+        }
+        totalEnergy += tmp;
+    }
+
+    return totalEnergy;
+}
+
+void printSimulationLog(vector<body>& bodies, double initialEnergy){
+    double finalEnergy = systemEnergy(bodies);
+    int count = int(bodies.size());
+
+    cout.precision(numeric_limits<double>::digits10);
+
+    cout
+        << setfill(' ') << showpos << scientific
+        << "\nSyteme de " << count << " corps, energie totale : "
+        << "\nAu debut   : " << initialEnergy
+        << "\nA la fin   : " << finalEnergy
+        << "\nDifference : "
+        << 100 * (initialEnergy - finalEnergy) / initialEnergy << " %"
+        << noshowpos << endl;
+
+}
+
+void printTidalForces(vector<body>& bodies){
+    int count = bodies.size();
+    double tabRel[20][20], tabAbs[20][20];
+    double tmp, sum;
+
+    for(int i = 0; i < count; i++){
+        sum = 0;
+        for(int j = 0; j < count; j++){
+            if( i!= j ) tmp = - tidalForce( bodies[i], bodies[j]) / bodies[i].m;
+            else tmp = +0.0;
+
+            tabAbs[i][j] = tmp;
+            sum += tmp;
+        }
+        for(int j = 0; j < count; j++){
+            if( i!= j ) tabRel[i][j] = 100 * tabAbs[i][j] / sum;
+        }
+    }
+
+    cout
+        << endl
+        << "Provenance de l'effet de maree en pourcentage de l'effet total"
+        << endl << endl;
+
+    cout << setw(18) << "";
+    for(int i = 0; i < count; i++){
+        cout << setw(18) << left << bodies[i].nom;
+    }
+    cout << endl;
+
+    cout.precision(1);
+    cout << noshowpos;
+
+    for(int i = 0; i < count; i++){
+        cout << setw(18) << left << bodies[i].nom;
+        for(int j = 0; j < count; j++){
+            cout
+                << left << setw(6) << scientific << tabAbs[j][i] << " :"
+                << left << setw(5) << fixed << tabRel[j][i] << setw(4) << left << "%";
+        }
+        cout << endl;
+    }
+
 }
