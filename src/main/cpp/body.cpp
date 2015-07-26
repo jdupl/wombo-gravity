@@ -17,6 +17,7 @@ body::~body() {
 body::body() {
     nom = "";
     m = 0;
+    mg = 0;
 
     rx = 0;
     ry = 0;
@@ -35,6 +36,7 @@ body::body(Json::Value JsonBody) {
     this->nom = JsonBody["_name"].asString();
 
     this->m = JsonBody["m"].asDouble();
+    this->mg = m * G;
 
     this->rx = JsonBody["rx"].asDouble();
     this->ry = JsonBody["ry"].asDouble();
@@ -49,6 +51,7 @@ body::body(vector<string> csv) {
     string::size_type sz;
     this->nom = csv[0];
     this->m = stod(csv[1]);
+    this->mg = m * G;
 
     this->rx = stod(csv[2]);
     this->ry = stod(csv[3]);
@@ -84,14 +87,13 @@ Json::Value body::toJsonLight() {
 }
 
 void body::actualise() {
-    ax /= m;
-    ay /= m;
-    az /= m;
+    ax /= mg;
+    ay /= mg;
+    az /= mg;
     // Calcul de la nouvelle position
     rx += 0.5 * ax * interval_p2 + vx * interval;
     ry += 0.5 * ay * interval_p2 + vy * interval;
     rz += 0.5 * az * interval_p2 + vz * interval;
-
     // Calcul de la nouvelle vitesse
     vx += ax * interval;
     vy += ay * interval;

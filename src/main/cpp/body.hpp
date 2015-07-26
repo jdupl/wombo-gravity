@@ -11,6 +11,7 @@
 #include "../../../lib/json/json/json.h"
 
 #define G (-6.6738480e-11)
+#define G_INV (-1.49838594e10)
 
 const unsigned int interval = 1;
 const unsigned int interval_p2 = interval * interval;
@@ -25,6 +26,8 @@ class body {
         int id;
         //masse
         double m;
+        //m * G
+        double mg;
 
         // position
         double rx;

@@ -9,6 +9,7 @@
 #include <sstream>
 #include <vector>
 #include <ctime>
+#include <limits>
 
 #include "../../../lib/json/json/json.h"
 
@@ -24,13 +25,13 @@ void accel(body&, body&);
 void computeInterval(vector<body>&);
 void computeFrame(vector<body>&, int&);
 void printSystem(vector<body>&);
-void printSimulationLog();
+void printSimulationLog(vector<body>&, double);
+double systemEnergy(vector<body>&);
 Json::Value getSystemJson(vector<body>&);
 void printTime(double);
 void printJson(Json::Value&, string, string);
 
 int main(int argc, char** argv) {
-    printSimulationLog();
     int maxFrames = 365;
     int frameResolution = 60 * 60 * 24;
     bool useJson = false;
@@ -105,7 +106,7 @@ void accel(body& b1, body& b2) {
 
     tmp = pow(tmpX, 2) + pow(tmpY, 2) + pow(tmpZ, 2);
 
-    tmp = ((b1.m) * (b2.m)) / (tmp * sqrt(tmp));
+    tmp = ((b1.mg) * (b2.mg)) / (tmp * sqrt(tmp));
 
     tmpX *= tmp;
     tmpY *= tmp;
@@ -130,10 +131,6 @@ void computeInterval(vector<body>& bodies) {
     }
 
     for (int i = 0; i < count; i++) { // pour chaque astre
-        bodies[i].ax *= G;
-        bodies[i].ay *= G;
-        bodies[i].az *= G;
-
         bodies[i].actualise();
         bodies[i].ax = 0;
         bodies[i].ay = 0;
@@ -178,60 +175,46 @@ void printTime(double t) {
     cout << setw(6) << left << setfill('0') << t / 1000 << " ms" << flush;
 }
 
-void printSimulationLog() {
-	cout
-    << "            . . . . .   .   . . . .         . .   . . .   . . . .   .   . . . . \n"
-    << "   . .         . . .     . .   .  .7vq   .  :Uii .   . .   . .   .              \n"
-    << ".         .     . .   . .   . .Y@O@8@2r     @EG8@ZX     .   .     .       . . . \n"
-    << " . .     .         .     .   . iOY .       .OG . @Mr . . @5.       . . . . .   .\n"
-    << ".         . . . . . iP@M@O@     @E.,U2M .  i@F. 7M@   .  :8Z@Nv . .     . . . . \n"
-    << " . .       . . .   @8G . :B@   .E@O@N87. . @ZOM@Gr . .    r@k5G@   .     .   .  \n"
-    << ".     .   .   . . . @M.   @B.   7Zr .   . .E@ .v@   .    :@X  .   .       .     \n"
-    << " . . .   .   uB@ . . @E..@ML   . @E. :i5  :@2   M@ . .  ,@G  . . .     . . . . .\n"
-    << "        . .   @Z@5  ..@M@L. . .  B@Z@M@M: iFi   kEu : . @G. .     . Z8@j  .     \n"
-    << "   . .   qui .:@ @BU .i@i  . .   .     . .     . .  B@G@G. .     qM@qMB@   .   .\n"
-    << ". .   . .M@G@F:8N vO@  v@v    .         .   . . .   . uN@G5   5O@8L  M@   . .   \n"
-    << "   .     .v@Frk@8r  q@X LL . . .             . .       . v:rE@M@B7 .O@   . .    \n"
-    << "  .  O2 . ..@q  i   ..q .           .   .     .       . . . 7.  LZ@E@r. .   18i \n"
-    << "   rG@   . . @Oi     .     .     . . .     .   .     . .     . .  O@X.   .U@B@: \n"
-    << "  MO@MO . .   jO@ .   .   . .         . .     .     . .       . . @M    BZ@L.   \n"
-    << " iMr iO@Mi     :F: .   . . .   .     .     . .     .       . .   .7: :O@8J   . .\n"
-    << "  . . ..@B@..Z@   .           . . . .   .             . . . . .   . MM@ . . .   \n"
-    << " .     . .v@E@     .     .     .     . .     .       . . .         . @O.       .\n"
-    << ".       . LM@ . .       .         .     .   .     .   .   .   .   .   FZ8 .   . \n"
-    << " .   .   .55     . .     . .       . .     . .   . . .   .   .   .   . r8,     .\n"
-    << "    . . . . . .         .   .         .     .   . .       . . .   . . .   .   . \n"
-    << "   .       . . .           .       . .       .       .         .         . . .  \n"
-    << "      . .       .  i@   uJ         7@UOJ,   ZO@1  :GBFO:  @i. . @:  . .   . .   \n"
-    << " .         . .   . @G@  0@     . . @G  @G. @Gi MO :@:::@Z r@;  @8,   . .   .   .\n"
-    << "  .     .         .q@1@ qB  . . .  O@,vOO FO  . @YiB  . @. :@ @O  . .   . . . . \n"
-    << "     . . .         MB BEJ@  S@Z@L. @Mr:GG j@ .  Bk:@    Mr  :@M. .   .   . .    \n"
-    << ".   . . .     .    Z@  M@G  .   .  G@ ..@, Mq  v@ LM, :G@   .O1 . .   . . .     \n"
-    << " .   . . .   .     SP.  GO . . .   PMMqB:. :E@qB...@ZBGF   . @,    . .   .   .  \n"
-    << ".     . . .     . .     .     .   . . . . .     .     . . . . . . . . .         \n"
-    << " . . . rX@O@.. @0@P@, U@   @; O7 . @: .@ . , , .OB   qEOOBMM  :@E@i  vBMEq   . .\n"
-    << "      iMX ...   iB5 . @Eq @M@ @u. .G0 7M:   .  O@8X   :.@2, .X@:..@G.2@ .M@     \n"
-    << " . . . @MX:  .   @:.  8LB@P2O.B2   @r.:@      ,@ rB     M7 . @i.  i@ uMr:MF    .\n"
-    << ".   . .  :BE1    Mi   @ rO.:@ @:  .BX iM. .   @E, @k. . @7.  Mu . u8 v@:@B    . \n"
-    << " . . . , . @B  . @L  ,O:   u8 E@ .,@: :@.  . 0OPuGq@.  .M1   @O, iGO 0B. @M     \n"
-    << ". . . vZ@M@F. ,E@8@Ei @ .  .@ .q@8@i  :E@Z@P qF .  O0   @r  . PO@MF .i@   @i. . \n"
-    << " . . . .       . . .     . .       . . . .     . . . .   . . . .   .   .        \n"
-    << ". . .   . .   . . . .     .   .       . . . .       .   .         .   . . .     \n"
-    << " . . .   .     . .   . .     . . .   . .         . .         .   . .   . .     .\n"
-    << ". .   . .     .           .         .   . .     . .     .   .     . .     . . . \n"
-    << "   .   . . . . .           .   . .   . .       . .   .   .     . . .     .      \n"
-    << "              . . . . . . . .       .   .   .   . .     . .     . .     . .   . \n"
-    << " .   . . . .   .       . .     .   .     .   . .   .       .     . . .     . .  \n"
-    << "  .   .     .       .     . .     .       .     . . .       .   .   . .     .   \n"
-    << " .   .   . . .   .     .:@B@i  . . . . .   . . . iu@7.     .           .   .    \n"
-    << "  . .       . . .     .  :;i@E.     . . .       @MBj@ZB .   .     .     . . .   \n"
-    << "         .       . .   . .  ,@7 7@M@X:   OG@Gv BB. ..@G@         . .     . . .  \n"
-    << ".             .   .   .   .r@E.M@r, ME:.@Br UBO1@ . @u.B@   .   . . . .         \n"
-    << "       .   . .   .   :r8Z@O@i F@    .@M@M.  .@OFZ@ @M  :B0 . . .     . .   .   .\n"
-    << "    .   . .     . .u@M@7: .   @N:7@G@Z@M@  G@,@B.M@M  . @S  .   . .     .   .   \n"
-    << " . .   .     . . . ..XZ@J.   ;M@8Mi  @:OEEO@ .L@  E@MSk@G. .                    \n"
-    << "    .   .   . . .     .,@GO   @Z. . @B. @M.   @E. . EE0:    . .                 \n"
-    << " . .     .   .                i@M25@E:  :@ZUr@8L . . .     . .     .       . .  \n"
-    << "  .   .   .     .   . .   .   . :rv     . i75,.   . .   .       .       .   . . \n"
-    << endl;
+double systemEnergy(vector<body>& bodies) {
+    int count = int(bodies.size());
+    double totalEnergy = 0;
+    double tmpX, tmpY, tmpZ, tmpD, tmp;
+
+    for (int i = 0; i < count; i++) {
+        tmp =
+            pow(bodies[i].vx, 2) +
+            pow(bodies[i].vy, 2) +
+            pow(bodies[i].vz, 2);
+
+        tmp *= bodies[i].mg * 0.5 * G_INV;
+
+        for (int j = i + 1; j < count; j++) {
+
+            tmpX = bodies[i].rx - bodies[j].rx;
+            tmpY = bodies[i].ry - bodies[j].ry;
+            tmpZ = bodies[i].rz - bodies[j].rz;
+            tmpD = sqrt(pow(tmpX, 2) + pow(tmpY, 2) + pow(tmpZ, 2));
+            tmp += (bodies[i].mg * bodies[j].mg) / tmpD * G_INV;
+        }
+        totalEnergy += tmp;
+    }
+
+    return totalEnergy;
+}
+
+void printSimulationLog(vector<body>& bodies, double initialEnergy) {
+    double finalEnergy = systemEnergy(bodies);
+    int count = int(bodies.size());
+
+    cout.precision(numeric_limits<double>::digits10);
+
+    cout
+        << setfill(' ') << showpos << scientific
+        << "\nSyteme de " << count << " corps, energie totale : "
+        << "\nAu debut   : " << initialEnergy
+        << "\nA la fin   : " << finalEnergy
+        << "\nDifference : "
+        << 100 * (initialEnergy - finalEnergy) / initialEnergy << " %"
+        << noshowpos << endl;
+
 }
