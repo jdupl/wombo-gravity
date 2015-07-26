@@ -44,7 +44,6 @@ int main(int argc, char** argv) {
     JsonWriter jsonWriter = JsonWriter(jsonFrameFile);
 
     vector <body> bodies = getBodies();
-
     if (useJson) {
         frameWriter = &jsonWriter;
     } else {
@@ -52,6 +51,7 @@ int main(int argc, char** argv) {
         remove(outBinFile.c_str());
     }
 
+    double initialEnergy = systemEnergy(bodies);
     int currentFrame = 0;
 
     while (currentFrame++ < maxFrames) {
@@ -64,6 +64,8 @@ int main(int argc, char** argv) {
 
     Json::Value tmp = getSystemJson(bodies);
     printJson(tmp, "bodies", "data/out.json");
+
+    printSimulationLog(bodies, initialEnergy);
 
     return 0;
 }
