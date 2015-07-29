@@ -30,3 +30,4 @@
 build/
 obj/
 src/main/web/bower_components
+target/
