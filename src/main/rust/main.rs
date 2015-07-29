@@ -23,16 +23,37 @@ pub struct Body {
     // acceleration
     ax: f64,
     ay: f64,
-    az: f64
+    az: f64,
+}
+
+impl Body {
+    pub fn update_pos(&mut self, duration_sec: f64) {
+        self.ax /= self.m;
+        self.ay /= self.m;
+        self.az /= self.m;
+
+        self.rx += 0.5 * self.ax * duration_sec * duration_sec + self.vx * duration_sec;
+        self.ry += 0.5 * self.ay * duration_sec * duration_sec + self.vy * duration_sec;
+        self.rz += 0.5 * self.az * duration_sec * duration_sec + self.vz * duration_sec;
+
+        // Calcul de la nouvelle vitesse
+        self.vx += self.ax * duration_sec;
+        self.vy += self.ay * duration_sec;
+        self.vz += self.az * duration_sec;
+
+        self.ax = 0.0;
+        self.ay = 0.0;
+        self.az = 0.0;
+    }
 }
 
 fn main() {
-    let max_frames = 50;
+    let max_frames = 365;
     // How many computations in a frame
-    let instant_count = 24 * 60 * 60;
+    let instant_count = 26 * 60 *60;
 
     // Duration in second of an instant
-    let instant_duration_sec = 1;
+    let instant_duration_sec: f64= 1.0;
 
     let mut bodies = read_json("data/data.json");
 
@@ -42,9 +63,13 @@ fn main() {
         current_frame += 1;
         compute_frame(instant_count, instant_duration_sec, &mut bodies);
     }
+
+    for body in bodies.iter() {
+        println!("{:?}", body);
+    }
 }
 
-fn compute_frame(instant_count: u32, instant_duration_sec: u32, bodies: &mut Vec<Body>) {
+fn compute_frame(instant_count: u32, instant_duration_sec: f64, bodies: &mut Vec<Body>) {
     let mut instant_counter = 0;
 
     while instant_counter < instant_count {
@@ -53,14 +78,14 @@ fn compute_frame(instant_count: u32, instant_duration_sec: u32, bodies: &mut Vec
     }
 }
 
-fn compute_instant(instant_duration_sec: u32, bodies: &mut Vec<Body>) {
+fn compute_instant(instant_duration_sec: f64, bodies: &mut Vec<Body>) {
     let body_count = bodies.len();
 
     let mut i = 0;
-    let mut j = 0;
+    let mut j;
 
     while i < body_count {
-        j = i + i;
+        j = i + 1;
         while j < body_count {
             accel(bodies, i, j);
             j += 1;
@@ -73,10 +98,7 @@ fn compute_instant(instant_duration_sec: u32, bodies: &mut Vec<Body>) {
         body.ay *= G;
         body.az *= G;
 
-        // body.update_pos();
-        // body.ax = 0;
-        // body.ay = 0;
-        // body.az = 0;
+        body.update_pos(instant_duration_sec);
     }
 }
 
@@ -86,9 +108,8 @@ fn accel(bodies: &mut Vec<Body>, b1_index: usize, b2_index: usize) {
     let mut tmp_y = bodies[b1_index].ry - bodies[b2_index].ry;
     let mut tmp_z = bodies[b1_index].rz - bodies[b2_index].rz;
 
-    let mut tmp = tmp_x * tmp_x + tmp_y * tmp_y + tmp_z * tmp_z;
-
-    tmp = ((bodies[b1_index].m) * (bodies[b2_index].m)) / (tmp.sqrt());
+    let mut tmp = (tmp_x * tmp_x) + (tmp_y * tmp_y) + (tmp_z * tmp_z);
+    tmp = ((bodies[b1_index].m) * (bodies[b2_index].m)) / (tmp * tmp.sqrt());
 
     tmp_x *= tmp;
     tmp_y *= tmp;
