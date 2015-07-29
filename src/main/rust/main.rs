@@ -1,68 +1,51 @@
 extern crate rustc_serialize;
 
+mod body;
+mod frame;
+mod writer;
+mod binary_writer;
+mod frame_buffer;
+
 use rustc_serialize::json;
 use std::fs::File;
 use std::path::Path;
 use std::io::Read;
 
+use body::Body;
+use frame::Frame;
+use binary_writer::BinaryWriter;
+use frame_buffer::FrameBuffer;
+
 const G: f64 = -6.6738480e-11;
-
-#[derive(Debug)]
-pub struct Body {
-    id: u32,
-    name: String,
-    m: f64,
-    // position
-    rx: f64,
-    ry: f64,
-    rz: f64,
-    // velocity
-    vx: f64,
-    vy: f64,
-    vz: f64,
-    // acceleration
-    ax: f64,
-    ay: f64,
-    az: f64,
-}
-
-impl Body {
-    pub fn update_pos(&mut self, duration_sec: f64) {
-        self.ax /= self.m;
-        self.ay /= self.m;
-        self.az /= self.m;
-
-        self.rx += 0.5 * self.ax * duration_sec * duration_sec + self.vx * duration_sec;
-        self.ry += 0.5 * self.ay * duration_sec * duration_sec + self.vy * duration_sec;
-        self.rz += 0.5 * self.az * duration_sec * duration_sec + self.vz * duration_sec;
-
-        // Calcul de la nouvelle vitesse
-        self.vx += self.ax * duration_sec;
-        self.vy += self.ay * duration_sec;
-        self.vz += self.az * duration_sec;
-
-        self.ax = 0.0;
-        self.ay = 0.0;
-        self.az = 0.0;
-    }
-}
 
 fn main() {
     let max_frames = 365;
     // How many computations in a frame
-    let instant_count = 26 * 60 *60;
+    // let instant_count = 24 * 60 *60;
+    let instant_count = 24;
 
     // Duration in second of an instant
-    let instant_duration_sec: f64= 1.0;
+    let instant_duration_sec: f64 = 1.0;
 
     let mut bodies = read_json("data/data.json");
 
     let mut current_frame = 0;
 
+    let writer = BinaryWriter;
+
+    let mut buffer = FrameBuffer::new(writer);
+
     while current_frame < max_frames {
-        current_frame += 1;
         compute_frame(instant_count, instant_duration_sec, &mut bodies);
+
+        let frame = Frame {
+            id: current_frame,
+            bodies: bodies.clone(),
+        };
+        buffer.add(frame);
+        current_frame += 1;
     }
+    buffer.close();
 
     for body in bodies.iter() {
         println!("{:?}", body);
