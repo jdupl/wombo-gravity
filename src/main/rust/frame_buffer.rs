@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use frame::Frame;
+use body::Frame;
 use writer::Writer;
 
 pub struct FrameBuffer<T> {
@@ -11,10 +11,11 @@ pub struct FrameBuffer<T> {
 
 impl<T: Writer> FrameBuffer<T> {
     pub fn new(writer: T) -> FrameBuffer<T> {
+        let max = 10;
         FrameBuffer {
-            frames: VecDeque::<Frame>::new(),
+            frames: VecDeque::<Frame>::with_capacity(max),
             writer: writer,
-            max_count: 10,
+            max_count: max,
         }
     }
 

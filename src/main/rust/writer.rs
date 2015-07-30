@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use frame::Frame;
+use body::Frame;
 
 pub trait Writer {
 
@@ -11,4 +11,13 @@ pub trait Writer {
     }
 
     fn write(&self, frame: &Frame);
+}
+
+pub struct BinaryWriter;
+
+impl Writer for BinaryWriter {
+
+    fn write(&self, frame: &Frame) {
+        println!("writing frame {}", frame.id);
+    }
 }

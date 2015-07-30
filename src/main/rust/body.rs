@@ -37,3 +37,8 @@ impl Body {
         self.az = 0.0;
     }
 }
+
+pub struct Frame {
+    pub id: u32,
+    pub bodies: Vec<Body>,
+}

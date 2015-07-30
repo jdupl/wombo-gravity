@@ -1,9 +1,7 @@
 extern crate rustc_serialize;
 
 mod body;
-mod frame;
 mod writer;
-mod binary_writer;
 mod frame_buffer;
 
 use rustc_serialize::json;
@@ -12,8 +10,8 @@ use std::path::Path;
 use std::io::Read;
 
 use body::Body;
-use frame::Frame;
-use binary_writer::BinaryWriter;
+use body::Frame;
+use writer::BinaryWriter;
 use frame_buffer::FrameBuffer;
 
 const G: f64 = -6.6738480e-11;
