@@ -1,4 +1,5 @@
 extern crate rustc_serialize;
+extern crate bincode;
 
 mod body;
 mod writer;
