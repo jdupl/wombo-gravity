@@ -49,6 +49,7 @@ BinaryFrameProvider.prototype.readFrame = function() {
 
     frame.id = frameHeader[0];
     frame.bodyCount = frameHeader[1];
+    console.log(frame);
 
     for (var i = 0; i < frameHeader[1]; i++) {
         var body = {};
@@ -69,7 +70,8 @@ BinaryFrameProvider.prototype.readFrame = function() {
 
 BinaryFrameProvider.prototype.load = function() {
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/data/out.bin', true);
+    // xhr.open('GET', '/data/out.bin', true);
+    xhr.open('GET', '/data/foo.bin', true);
     xhr.responseType = 'arraybuffer';
 
     var self = this;

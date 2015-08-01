@@ -43,18 +43,17 @@ impl Writer for BinaryWriter {
         };
 
         let mut file = match OpenOptions::new().write(true).append(true).create(true).open("foo.bin") {
-            Err(why) => panic!("couldn't open {}: {}", "foo.bin", Error::description(&why)),
+            Err(why) => panic!("Couldn't open {}: {}", "foo.bin", Error::description(&why)),
             Ok(file) => file,
         };
 
         let header = FrameHeader {
-            frame_number: frame.id as u32,
+            frame_number: 1,
+            // frame_number: frame.id as u64,
             body_count: frame.bodies.len() as u32,
         };
-
-        let encoded_header: Vec<u8> = bincode::encode(&header, SizeLimit::Infinite).unwrap();
-
-        match file.write_all(&encoded_header) {
+        println!("{:?}", bincode::encode(&header, SizeLimit::Infinite).unwrap());
+        match file.write_all(&bincode::encode(&header, SizeLimit::Infinite).unwrap()) {
             Err(why) => panic!("Error writing to file: {}", Error::description(&why)),
             Ok(ok) => ok,
         };
