@@ -1,31 +1,24 @@
 wombo-gravity
 =============
 
-N-body c++ simulator with webgl graphic rendering.
+N-body rust simulator with webgl graphic rendering.
 
 ### Dependencies
 
-#### Programs
-
-* GNU/make
-* g++
-* bower (webui only)
-
-#### Libraries
-
-Please put libs in lib/
-
-* https://github.com/open-source-parsers/jsoncpp#generating-amalgamated-source-and-header
-
+* Rust
+* Python 3+
+* Bower
 
 ### Compiling
 
-`make` to build wombo simulator
+`cargo build --release` build wombo simulator with compiler optimisations
 
-`cd src/main/web/ && bower install` to install web dependencies
+`cd src/main/web/ && bower install` install web dependencies
 
 
 ### Running
-`./build/wombo`
+`cargo run --release` run wombo simulator with compiler optimisations
 
-`firefox src/main/web/index.html`
+`bash webui.bash` start the python web server
+
+`chromium http://localhost:8000` view index.html in a browser (chromium recommended)
