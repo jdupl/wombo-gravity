@@ -3,7 +3,7 @@ var scene, camera, renderer;
 var geometry, material, mesh;
 var bodies = {};
 
-var fps = 60;
+var fps = 10;
 
 var scaleFactor = 10000000;
 
@@ -44,24 +44,21 @@ BinaryFrameProvider.prototype.getNextFrame = function() {
 BinaryFrameProvider.prototype.readFrame = function() {
     var frame = {};
     frame.bodies = [];
-    var frameHeader = new Uint32Array(this.binData, this.currentByteIndex, 2);
+    var frameHeader = new DataView(this.binData, this.currentByteIndex, 2 * 4);
     this.currentByteIndex += 2 * 4;
 
-    frame.id = frameHeader[0];
-    frame.bodyCount = frameHeader[1];
-    console.log(frame);
+    frame.id = frameHeader.getUint32(0);
+    frame.bodyCount = frameHeader.getUint32(4);
 
-    for (var i = 0; i < frameHeader[1]; i++) {
+    for (var i = 0; i < frame.bodyCount; i++) {
         var body = {};
-        body.id = new Uint32Array(this.binData, this.currentByteIndex, 1)[0];
-        this.currentByteIndex += 4;
-        this.currentByteIndex += 4; // padding
+        var bodyData = new DataView(this.binData, this.currentByteIndex, 4 + 3 * 8);
+        this.currentByteIndex += 4 + 3 * 8;
 
-        var coords = new Float64Array(this.binData, this.currentByteIndex, 3);
-        this.currentByteIndex += 3 * 8;
-        body.rx = coords[0];
-        body.ry = coords[1];
-        body.rz = coords[2];
+        body.id = bodyData.getUint32(0);
+        body.rx = bodyData.getFloat64(4);
+        body.ry = bodyData.getFloat64(12);
+        body.rz = bodyData.getFloat64(20);
 
         frame.bodies[body.id] = body;
     }
@@ -70,8 +67,7 @@ BinaryFrameProvider.prototype.readFrame = function() {
 
 BinaryFrameProvider.prototype.load = function() {
     var xhr = new XMLHttpRequest();
-    // xhr.open('GET', '/data/out.bin', true);
-    xhr.open('GET', '/data/foo.bin', true);
+    xhr.open('GET', '/data/out.bin', true);
     xhr.responseType = 'arraybuffer';
 
     var self = this;
@@ -88,7 +84,6 @@ BinaryFrameProvider.prototype.load = function() {
 function initFirstFrame(frame) {
     var bodiesData = frame.bodies;
     var geometry = new THREE.SphereGeometry(200, 8, 6);
-    console.log(frame);
 
     for (var i = 0; i < bodiesData.length; i++) {
         var material = new THREE.PointCloudMaterial({size: 25, sizeAttenuation: false, color: Math.random() * 0xffffff});

@@ -18,11 +18,9 @@ use frame_buffer::FrameBuffer;
 const G: f64 = -6.6738480e-11;
 
 fn main() {
-    // let max_frames = 365;
-    let max_frames = 1;
+    let max_frames = 365;
     // How many computations in a frame
-    // let instant_count = 24 * 60 *60;
-    let instant_count = 1;
+    let instant_count = 24 * 60 * 60;
 
     // Duration in second of an instant
     let instant_duration_sec: f64 = 1.0;
