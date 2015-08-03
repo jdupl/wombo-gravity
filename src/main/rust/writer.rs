@@ -43,7 +43,7 @@ impl Writer for BinaryWriter {
         };
 
         let mut file = match OpenOptions::new().write(true).append(true).create(true).open("data/out.bin") {
-            Err(why) => panic!("Couldn't open {}: {}", "data/out.bin", Error::description(&why)),
+            Err(why) => panic!("Couldn't open {}: {}", "data/out.bin", why.description()),
             Ok(file) => file,
         };
 
@@ -53,7 +53,7 @@ impl Writer for BinaryWriter {
         };
 
         match file.write_all(&bincode::encode(&header, SizeLimit::Infinite).unwrap()) {
-            Err(why) => panic!("Error writing to file: {}", Error::description(&why)),
+            Err(why) => panic!("Error writing to file: {}", why.description()),
             Ok(ok) => ok,
         };
 
@@ -66,7 +66,7 @@ impl Writer for BinaryWriter {
             };
 
             match file.write_all(&bincode::encode(&data, SizeLimit::Infinite).unwrap()) {
-                Err(why) => panic!("Error writing file: {}", Error::description(&why)),
+                Err(why) => panic!("Error writing file: {}", why.description()),
                 Ok(ok) => ok,
             };
         }
