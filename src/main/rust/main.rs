@@ -1,5 +1,6 @@
 extern crate rustc_serialize;
 extern crate bincode;
+extern crate num_cpus;
 
 mod body;
 mod writer;
@@ -32,6 +33,7 @@ fn main() {
     let writer = BinaryWriter;
 
     let mut buffer = FrameBuffer::new(writer);
+    divide_problem_for_cores(11, 2);
 
     while current_frame < max_frames {
         compute_frame(instant_count, instant_duration_sec, &mut bodies);
@@ -48,6 +50,38 @@ fn main() {
     for body in bodies.iter() {
         println!("{:?}", body);
     }
+}
+
+fn get_step_count_for_parrallel_perms(body_count: u32, cpu_count: u32) -> u32 {
+    // TODO FIXME
+    let perms_count = (body_count * body_count) / 2;
+
+    let perms_per_cpu_step = (body_count as f64 / cpu_count as f64).ceil() as u32;
+    let perms_per_step = (perms_per_cpu_step - 1) * cpu_count;
+
+    return (perms_count as f64 / perms_per_step as f64).ceil() as u32;
+}
+
+fn divide_problem_for_cores(body_count: u32, cpu_count: u32) {
+    let step_count = get_step_count_for_parrallel_perms(body_count, cpu_count);
+    for x in 0..step_count {
+        divide_step(x, body_count, cpu_count);
+    }
+}
+
+fn divide_step(step: u32, body_count: u32, cpu_count: u32) -> Vec<Vec<u32>> {
+    let bodies_per_cpu = (body_count as f64 / cpu_count as f64).ceil() as usize;
+
+    let mut core_jobs: Vec<Vec<u32>> = vec![vec![]; cpu_count as usize];
+
+    for x in 0..core_jobs.len() {
+        core_jobs[x] = vec![0; bodies_per_cpu];
+
+        for y in 0..bodies_per_cpu {
+            core_jobs[x][y] = (y as u32 + (x * bodies_per_cpu) as u32 + step) % (body_count + 1) as u32;
+        }
+    }
+    return core_jobs;
 }
 
 fn compute_frame(instant_count: u32, instant_duration_sec: f64, bodies: &mut Vec<Body>) {
@@ -145,7 +179,7 @@ pub fn read_json(name: &str) -> Vec<Body> {
     let mut count  = 0;
 
     for body_data in decoded.bodies.iter() {
-        let mut body = Body {
+        let body = Body {
             id: count, name: body_data.name.clone(), m: body_data.m, rx: body_data.rx,
             ry: body_data.ry, rz: body_data.rz, vx: body_data.vx, vy: body_data.vy,
             vz: body_data.vz, ax: 0.0, ay: 0.0, az: 0.0
@@ -156,4 +190,14 @@ pub fn read_json(name: &str) -> Vec<Body> {
     }
 
     return bodies;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_step_count_for_parrallel_perms() {
+        assert_eq!(super::get_step_count_for_parrallel_perms(12, 4), 4);
+    }
 }
